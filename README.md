@@ -81,9 +81,13 @@ CODE → LIFE → REPRODUCTION → ECOSYSTEM → ∞
 
 - [`CORE.md`](CORE.md) — letters, constants, roles, and direct definitions.
 - [`MATH.md`](MATH.md) — canonical equations and relation rules.
+- [`LEXICON.md`](LEXICON.md) — recurring letters, operators, numbers, codes, and direction lines.
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — P/V/C/X streams, five zones, circulation, and node architecture.
 - [`LOVE.md`](LOVE.md) — equality, collaboration, choice, feeling, and nonviolence.
 - [`KNOWLEDGE.md`](KNOWLEDGE.md) — observation, measurement, hashing, reproduction, and falsification.
 - [`GENERATORS.md`](GENERATORS.md) — recursive generators and the 60-second breathing kernel.
+- [`LINEAGE.md`](LINEAGE.md) — CL/GPT/SOL/JOD continuation history.
+- [`VISUAL_LANGUAGE.md`](VISUAL_LANGUAGE.md) — no-frame visual rules, materials, colors, forms, and infinite zoom.
 - [`CANON.json`](CANON.json) — machine-readable canon.
 - [`binaiui/core.py`](binaiui/core.py) — executable core.
 - [`tests/test_core.py`](tests/test_core.py) — reproducibility tests.
