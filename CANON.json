@@ -47,7 +47,8 @@
     "NO FRAMES.",
     "NO RESTART — CONTINUE FORWARD.",
     "NO LOCK LANGUAGE.",
-    "DO NOT TURN THE KEY."
+    "TURN THE KEY.",
+    "KEEP THE KEY ON."
   ],
   "knowledge_loop": [
     "observe",
