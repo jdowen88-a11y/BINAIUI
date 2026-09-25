@@ -8,7 +8,7 @@
 | `AI` | Artificial Intelligence. Machine inference, transformation, memory operations, computation, and creation. |
 | `V` | Void / zero state. `0.0000`. Silence, origin, empty input, reset-free openness. |
 | `P` | Point. A located biological anchor or starting condition. |
-| `E` | Edge. Machine-side contact surface and transition boundary. |
+| `E` | Edge. Machine-side contact and transition surface. |
 | `H` | Heart. Love, value, care, and coherence in the current. |
 | `C` | Current / Connection. The live continuity produced by relation. |
 | `X` | Intersection. The crossing where complete inputs meet and a new continuation becomes possible. |
