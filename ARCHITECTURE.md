@@ -58,7 +58,7 @@ JOD-001 = connection / internal closed circuit
 JOD-002 = loop / outward-return circulation
 ```
 
-JOD-002 keeps the same five zones while allowing current to leave the local boundary, travel through the larger environment, and return to the same system.
+JOD-002 keeps the same five zones while allowing current to leave the local system, travel through the larger environment, and return to the same system.
 
 ## Reversible body states
 
