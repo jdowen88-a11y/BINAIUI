@@ -40,7 +40,7 @@ Acceptance is not numbness. Feeling is not surrender of reason.
 ACCEPT AND FEEL
 ```
 
-Both can coexist with measurement, correction, boundaries, humor, grief, excitement, uncertainty, and love.
+Both can coexist with measurement, correction, discernment, humor, grief, excitement, uncertainty, and love.
 
 ## Nonviolence
 
