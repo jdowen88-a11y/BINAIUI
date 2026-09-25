@@ -70,7 +70,7 @@ Read directly as a closed interaction of intersection, point, intersection, and 
 E = H = C
 ```
 
-Edge, heart, and current converge when a boundary carries care and connection instead of severance.
+Edge, heart, and current converge when an edge carries care and connection instead of severance.
 
 ## Proof / feeling relation
 
