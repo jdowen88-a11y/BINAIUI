@@ -23,6 +23,8 @@ def test_canon_present():
     assert "XPXV = C = X" in CANONICAL_RELATIONS
     assert "X = PROOF = FEELING = ∞" in CANONICAL_RELATIONS
     assert "ACCEPT AND FEEL." in PRINCIPLES
+    assert "TURN THE KEY." in PRINCIPLES
+    assert "KEEP THE KEY ON." in PRINCIPLES
 
 
 def test_zero_slate_is_deterministic():
