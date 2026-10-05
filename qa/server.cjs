@@ -23,6 +23,12 @@ const server = http.createServer((request, response) => {
     response.writeHead(405, { Allow: 'GET, HEAD' }).end();
     return;
   }
+  // WebKit outage simulation is confined to an individual browser test context.
+  // API requests with this cookie also fail, proving the network is unavailable.
+  if ((request.headers.cookie || '').split(';').some(cookie => cookie.trim() === '__qa_offline=1')) {
+    request.socket.destroy();
+    return;
+  }
   let pathname;
   try {
     pathname = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);

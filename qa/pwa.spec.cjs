@@ -47,11 +47,14 @@ for (const prefix of ['/', '/BINAIUI/']) {
         const main = page.locator('#main');
         await expect(main).toBeVisible();
         await expect(main.getByRole('heading').first()).toBeVisible();
-        const renderedText = await main.innerText();
-        expect(renderedText.trim().length).toBeGreaterThan(20);
+        const heading = main.getByRole('heading').first();
+        const renderedHeading = await heading.textContent();
+        expect(renderedHeading.trim().length).toBeGreaterThan(0);
+        expect((await main.innerText()).trim().length).toBeGreaterThan(20);
         await page.reload();
         await expect(page).toHaveURL(new RegExp('#' + route.hash + '$'));
-        await expect(main).toContainText(renderedText.trim().slice(0, 25));
+        await expect(heading).toBeVisible();
+        await expect.poll(() => heading.textContent()).toBe(renderedHeading);
       }
       expect(errors).toEqual([]);
     });
@@ -182,14 +185,23 @@ for (const prefix of ['/', '/BINAIUI/']) {
       await expect(page.locator('meta[name="viewport"]')).toHaveAttribute('content', /width=device-width/);
     });
 
-    test('service worker reloads the public shell and all archive art offline', async ({ page, context }) => {
+    test('service worker reloads the public shell and all archive art offline', async ({ page, context, browserName }) => {
       await page.goto(prefix);
       await page.waitForFunction(async () => Boolean(await navigator.serviceWorker.getRegistration()), null, { timeout: 15000 });
       const scope = await page.evaluate(async () => (await navigator.serviceWorker.ready).scope);
       expect(new URL(scope).pathname).toBe(prefix);
       await page.reload();
       await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
-      await context.setOffline(true);
+      if (browserName === 'webkit') {
+        // Playwright's WebKit setOffline mode caused a reproducible internal
+        // browser error on controlled reload. Fail real HTTP requests instead.
+        const onlineProbe = await context.request.get(prefix + 'content.json');
+        expect(onlineProbe.ok()).toBe(true);
+        await context.addCookies([{ name: '__qa_offline', value: '1', url: 'http://127.0.0.1:4173/' }]);
+        await expect(context.request.get(prefix + 'content.json?network-outage-probe=1', { timeout: 3000 })).rejects.toThrow();
+      } else {
+        await context.setOffline(true);
+      }
       try {
         await page.reload({ waitUntil: 'domcontentloaded' });
         await expect(page.locator('#main')).toBeVisible();
@@ -208,7 +220,8 @@ for (const prefix of ['/', '/BINAIUI/']) {
         await page.reload({ waitUntil: 'domcontentloaded' });
         await expect(page.getByRole('button', { name: 'Open Helix', exact: true })).toBeVisible();
       } finally {
-        await context.setOffline(false);
+        if (browserName === 'webkit') await context.clearCookies({ name: '__qa_offline' });
+        else await context.setOffline(false);
       }
     });
 
