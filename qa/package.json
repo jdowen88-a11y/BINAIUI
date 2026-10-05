@@ -1,0 +1,14 @@
+{
+  "name": "binaiui-pwa-checks",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Browser checks only; the website has no runtime framework dependencies",
+  "scripts": {
+    "test": "playwright test",
+    "test:report": "playwright show-report",
+    "serve": "node server.cjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}
