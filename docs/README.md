@@ -19,6 +19,17 @@ The original canon and Python core remain at the repository root.
 
 Use Safari's aA → Request Desktop Website if GitHub hides a Settings/upload control.
 
+## Before the first publication
+
+You can review the site through the test screenshots and download the finished
+website artifact from the successful GitHub Actions run. The artifact contains
+BINAIUI.zip; save it in Files and uncompress it.
+
+To add contact details before the site is live, open docs/content.json on the
+app branch in Safari, tap GitHub's pencil editor, change the email/contactUrl
+strings, and commit. Use only contact details you want public. After publication,
+Studio provides the easier form-based workflow below.
+
 ## Edit from your phone
 
 Open the footer's Studio link. Edit the introduction, about/contact, images, or
