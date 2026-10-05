@@ -26,7 +26,9 @@ research. Images can be chosen from Photos/Files. JPEG, PNG and WebP up to 12 MB
 are resized to a maximum 1200px edge and embedded in content.json. Convert HEIC
 to JPEG using Photos if needed.
 
-Save draft keeps changes in this browser on this phone. Preview draft clearly
+Save draft keeps changes in this browser on this phone. If phone storage is full,
+Export content and Download website ZIP still back up valid edits to Files.
+Preview draft runs in memory for this session and clearly
 labels them. There is no authenticated admin and no automatic remote publishing.
 Browser data can be deleted or evicted: always export a backup to Files.
 
@@ -44,8 +46,8 @@ exported backups or Git history. Keep your originals and variants separately.
 
 ## Download the whole website
 
-Studio → Save draft → Download website ZIP. Save BINAIUI.zip in Files and tap it
-to uncompress. It contains the saved draft and complete static website in a flat folder.
+Studio → Download website ZIP. Save draft also keeps a copy on this phone. Save BINAIUI.zip in Files and tap it
+to uncompress. It contains your current valid draft and complete static website in a flat folder.
 For a new public GitHub repository, upload the extracted files, with index.html
 at the repository root, and enable Pages from main → / (root).
 Do not upload the ZIP itself as the website.
