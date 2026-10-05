@@ -2,7 +2,7 @@ name: BINAIUI PWA checks
 
 on:
   push:
-    branches: [binaiui-mobile-pwa]
+    branches: [main, binaiui-mobile-pwa]
     paths:
       - 'docs/**'
       - 'qa/**'

@@ -39,6 +39,7 @@ for (const prefix of ['/', '/BINAIUI/']) {
     test('public routes navigate and survive refresh without JavaScript errors', async ({ page }) => {
       const errors = [];
       page.on('pageerror', error => errors.push(error.message));
+      page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
       await page.goto(prefix);
       for (const route of routes) {
         await goToRoute(page, route.name);
@@ -355,6 +356,34 @@ for (const prefix of ['/', '/BINAIUI/']) {
       await goToRoute(page, 'About');
       await expect(page.getByRole('link', { name: /^Contact link/ })).toHaveAttribute('href', exported.site.contactUrl);
       await expect(page.getByRole('link', { name: /Email BINAIUI/ })).toHaveAttribute('href', 'mailto:studio%40example.com');
+    });
+
+    test('storage failure preserves valid edits for Files export and a session preview', async ({ page }, testInfo) => {
+      await page.addInitScript(() => {
+        Storage.prototype.setItem = function () {
+          throw new DOMException('Browser verification simulates full device storage.', 'QuotaExceededError');
+        };
+      });
+      await page.goto(prefix + '#studio');
+      const marker = 'This valid iPhone draft stays recoverable when browser storage is full.';
+      await page.getByLabel('Introduction', { exact: true }).fill(marker);
+      await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+      await expect(page.locator('#form-error')).toContainText('could not save your draft');
+      await expect(page.locator('#form-error')).toContainText('Export content to Files');
+      await expect(page.getByLabel('Introduction', { exact: true })).toHaveValue(marker);
+      const downloadPromise = page.waitForEvent('download');
+      await page.getByRole('button', { name: 'Export content', exact: true }).click();
+      const download = await downloadPromise;
+      const filename = testInfo.outputPath('storage-recovery-content.json');
+      await download.saveAs(filename);
+      expect(JSON.parse(await fs.readFile(filename, 'utf8')).site.introduction).toBe(marker);
+      await page.getByRole('button', { name: 'Preview draft', exact: true }).click();
+      await expect(page.getByText('Local draft preview', { exact: true })).toBeVisible();
+      await expect(page.locator('#main')).toContainText(marker);
+      await page.reload();
+      await expect(page.locator('#main').getByRole('heading').first()).toBeVisible();
+      await expect(page.locator('#main')).not.toContainText(marker);
+      await expect(page.getByText('Local draft preview', { exact: true })).not.toBeVisible();
     });
 
     test('studio drafts persist locally, preview, export and restore without changing published content', async ({ page, request }, testInfo) => {
