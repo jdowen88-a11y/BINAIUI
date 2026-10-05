@@ -58,8 +58,9 @@ this site has no underscore-named files and also works without it.
 ## Offline and updates
 
 A relative service worker caches the shell, content, all six sample SVG studies,
-icons and these guides. Only same-origin app assets are handled. Online assets
-and content are refreshed from the network; offline requests fall back to cache.
+icons and these guides. Only same-origin app assets are handled. The versioned shell and its assets load from cache first, keeping them consistent
+until you choose Update now. Content is refreshed online, with a two-second
+network timeout and cached fallback when the connection stalls.
 External GitHub research links need a connection. Service workers require HTTPS
 (or localhost for development); opening index.html directly in Files is not a PWA.
 
