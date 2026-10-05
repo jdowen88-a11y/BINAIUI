@@ -1,5 +1,6 @@
 const { test, expect } = require('@playwright/test');
 const fs = require('node:fs/promises');
+const { execFileSync } = require('node:child_process');
 
 const routes = [
   { hash: 'home', name: 'Home' },
@@ -84,7 +85,7 @@ for (const prefix of ['/', '/BINAIUI/']) {
       const main = page.locator('#main');
       const openButtons = main.getByRole('button', { name: /^Open / });
       await expect(openButtons).toHaveCount(6);
-      const search = page.getByRole('textbox', { name: 'Search archive', exact: true });
+      const search = page.getByLabel('Search archive', { exact: true });
       await search.fill('helix');
       await expect(openButtons).toHaveCount(1);
       await expect(page.getByRole('button', { name: 'Open Helix', exact: true })).toBeVisible();
@@ -161,6 +162,13 @@ for (const prefix of ['/', '/BINAIUI/']) {
         expect(bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))).toBe(true);
         expect(bytes.readUInt32BE(16)).toBe(size);
         expect(bytes.readUInt32BE(20)).toBe(size);
+        const decoded = await page.evaluate(src => new Promise(resolve => {
+          const image = new Image();
+          image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight });
+          image.onerror = () => resolve(null);
+          image.src = src;
+        }), iconURL.href);
+        expect(decoded).toEqual({ width: size, height: size });
       }
       const touchHref = await page.locator('link[rel="apple-touch-icon"]').getAttribute('href');
       expect(touchHref).not.toMatch(/^(\/|https?:)/);
@@ -201,6 +209,152 @@ for (const prefix of ['/', '/BINAIUI/']) {
       } finally {
         await context.setOffline(false);
       }
+    });
+
+    test('website ZIP is complete, has valid checksums and contains the current saved draft', async ({ page }, testInfo) => {
+      await page.goto(prefix + '#studio');
+      const draftIntroduction = 'The saved iPhone draft must travel inside the full website ZIP.';
+      await page.getByLabel('Introduction', { exact: true }).fill(draftIntroduction);
+      await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+      const downloadPromise = page.waitForEvent('download');
+      await page.getByRole('button', { name: 'Download website ZIP', exact: true }).click();
+      const download = await downloadPromise;
+      expect(download.suggestedFilename()).toBe('BINAIUI.zip');
+      const filename = testInfo.outputPath('BINAIUI.zip');
+      await download.saveAs(filename);
+      const python = [
+        'import sys, zipfile, json, struct, zlib, binascii, math',
+        'with zipfile.ZipFile(sys.argv[1]) as archive:',
+        '    assert archive.testzip() is None, "ZIP CRC failure"',
+        '    names = archive.namelist()',
+        '    assert len(names) == len(set(names)), "Duplicate archive filenames"',
+        '    assert all("/" not in name and "\\\\" not in name for name in names), "Website ZIP must be flat"',
+        '    required = {"index.html", "styles.css", "app.js", "content.json", "manifest.webmanifest", "sw.js", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "helix.svg", "prism.svg", "seed.svg", "intersection.svg", "lattice.svg", "current.svg", "README.md", "PUBLICATION-CHECKLIST.md", "TEST-REPORT.md", ".nojekyll"}',
+        '    assert required <= set(names), "Missing static site files: " + str(required - set(names))',
+        '    assert archive.read(".nojekyll") == b"", ".nojekyll must be included"',
+        '    content = json.loads(archive.read("content.json"))',
+        '    assert content["site"]["introduction"] == sys.argv[2], "ZIP contains stale content"',
+        '    for item in content["archive"]:',
+        '        if item["image"].startswith("./"): assert item["image"][2:] in names, "Missing artwork"',
+        '    decoded = {}',
+        '    for name, expected in [("icon-192.png", 192), ("icon-512.png", 512), ("apple-touch-icon.png", 180)]:',
+        '        image = archive.read(name)',
+        '        assert image[:8] == b"\\x89PNG\\r\\n\\x1a\\n", "PNG signature failure"',
+        '        cursor = 8',
+        '        compressed = bytearray()',
+        '        width = height = depth = color = interlace = None',
+        '        ended = False',
+        '        while cursor < len(image):',
+        '            length = struct.unpack(">I", image[cursor:cursor+4])[0]',
+        '            kind = image[cursor+4:cursor+8]',
+        '            data = image[cursor+8:cursor+8+length]',
+        '            crc = struct.unpack(">I", image[cursor+8+length:cursor+12+length])[0]',
+        '            assert binascii.crc32(kind + data) & 0xffffffff == crc, "PNG chunk CRC failure"',
+        '            if kind == b"IHDR":',
+        '                width, height, depth, color, compression, filtering, interlace = struct.unpack(">IIBBBBB", data)',
+        '                assert width == height == expected, "Incorrect icon dimensions"',
+        '                assert compression == filtering == interlace == 0, "Unexpected PNG encoding"',
+        '            if kind == b"IDAT": compressed.extend(data)',
+        '            if kind == b"IEND": ended = True',
+        '            cursor += length + 12',
+        '        assert ended and cursor == len(image), "Incomplete PNG"',
+        '        channels = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}[color]',
+        '        row = math.ceil(width * depth * channels / 8)',
+        '        pixels = zlib.decompress(compressed)',
+        '        assert len(pixels) == height * (row + 1), "PNG pixels cannot be decoded"',
+        '        assert all(pixels[y * (row + 1)] in range(5) for y in range(height)), "Invalid PNG row filter"',
+        '        decoded[name] = [width, height]',
+        '    print(json.dumps({"flat_files": len(names), "zip_crc": "valid", "saved_draft": "current", "decoded_icons": decoded}))'
+      ].join('\n');
+      const verification = execFileSync('python', ['-c', python, filename, draftIntroduction], { encoding: 'utf8' });
+      await testInfo.attach('Website ZIP verification', { body: verification, contentType: 'text/plain' });
+    });
+
+    test('content import accepts a valid backup and preserves the draft when invalid backups are rejected', async ({ page, request }) => {
+      const published = await (await request.get(prefix + 'content.json')).json();
+      const valid = JSON.parse(JSON.stringify(published));
+      valid.site.introduction = 'A restored mobile backup with literal <img src=x onerror="window.__binaiuiImportExecuted=true"> text.';
+      await page.goto(prefix + '#studio');
+      const input = page.getByLabel('Import content', { exact: true });
+      await input.setInputFiles({ name: 'content.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(valid)) });
+      await expect(page.locator('#toast')).toContainText('Content imported as a local draft.');
+      await expect(page.getByLabel('Introduction', { exact: true })).toHaveValue(valid.site.introduction);
+      const badVersion = JSON.parse(JSON.stringify(valid)); badVersion.version = 99;
+      const badLink = JSON.parse(JSON.stringify(valid)); badLink.site.contactUrl = 'javascript:alert(1)';
+      const duplicateID = JSON.parse(JSON.stringify(valid)); duplicateID.archive[1].id = duplicateID.archive[0].id;
+      const missingArt = JSON.parse(JSON.stringify(valid)); missingArt.archive[0].image = './missing.svg';
+      for (const invalid of ['{this is not JSON', JSON.stringify(badVersion), JSON.stringify(badLink), JSON.stringify(duplicateID), JSON.stringify(missingArt)]) {
+        await input.setInputFiles({ name: 'invalid.json', mimeType: 'application/json', buffer: Buffer.from(invalid) });
+        await expect(input).toHaveValue('');
+        await expect(page.locator('#toast')).toContainText('Import failed:');
+        await expect(page.getByLabel('Introduction', { exact: true })).toHaveValue(valid.site.introduction);
+      }
+      await page.reload();
+      await expect(page.getByLabel('Introduction', { exact: true })).toHaveValue(valid.site.introduction);
+      await goToRoute(page, 'Home');
+      await expect(page.locator('#main')).not.toContainText(valid.site.introduction);
+      await page.evaluate(() => { location.hash = 'studio'; });
+      await page.getByRole('button', { name: 'Preview draft', exact: true }).click();
+      await expect(page.locator('#main')).toContainText(valid.site.introduction);
+      expect(await page.evaluate(() => window.__binaiuiImportExecuted)).toBeUndefined();
+      await expect(page.locator('#main img[src="x"]')).toHaveCount(0);
+    });
+
+    test('a real PNG upload is resized, exported with alt text and displayed in draft preview', async ({ page, request }, testInfo) => {
+      const icon = await (await request.get(prefix + 'icon-192.png')).body();
+      await page.goto(prefix + '#studio');
+      const entry = page.locator('.editor-entry').first();
+      await entry.locator('summary').click();
+      const description = 'A violet and emerald BINAIUI PNG uploaded during mobile browser verification.';
+      await entry.getByLabel('Image description (alt text)', { exact: true }).fill(description);
+      await entry.getByLabel('Choose image from Photos or Files', { exact: true }).setInputFiles({
+        name: 'binaiui-test.png', mimeType: 'image/png', buffer: icon
+      });
+      await expect(entry.locator('input[name="a0-image"]')).toHaveValue(/^data:image\/jpeg;base64,/);
+      await expect.poll(() => entry.locator('.editor-image').evaluate(image => image.complete && image.naturalWidth > 0)).toBe(true);
+      await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+      const downloadPromise = page.waitForEvent('download');
+      await page.getByRole('button', { name: 'Export content', exact: true }).click();
+      const download = await downloadPromise;
+      const filename = testInfo.outputPath('photo-content.json');
+      await download.saveAs(filename);
+      const exported = JSON.parse(await fs.readFile(filename, 'utf8'));
+      expect(exported.archive[0].alt).toBe(description);
+      expect(exported.archive[0].image).toMatch(/^data:image\/jpeg;base64,/);
+      expect(exported.archive[0].sample).toBe(false);
+      await page.getByRole('button', { name: 'Preview draft', exact: true }).click();
+      await goToRoute(page, 'Archive');
+      await page.getByRole('button', { name: 'Open Helix', exact: true }).click();
+      await expect(page.locator('#viewer-image')).toHaveAttribute('alt', description);
+      await checkArt(page.locator('#viewer'));
+    });
+
+    test('contact editing rejects executable URLs and saves valid https links', async ({ page }, testInfo) => {
+      await page.goto(prefix + '#studio');
+      const introduction = page.getByLabel('Introduction', { exact: true });
+      await expect(introduction).toBeVisible();
+      const original = await introduction.inputValue();
+      await introduction.fill('This edit must remain unsaved when the contact link is invalid.');
+      await page.getByLabel('Contact link', { exact: true }).fill('javascript:alert(1)');
+      await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+      await expect(page.locator('#form-error')).toContainText('https://');
+      await page.reload();
+      await expect(introduction).toHaveValue(original);
+      await page.getByLabel('Contact link', { exact: true }).fill('https://github.com/jdowen88-a11y/BINAIUI');
+      await page.getByLabel('Contact email', { exact: true }).fill('studio@example.com');
+      await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+      const downloadPromise = page.waitForEvent('download');
+      await page.getByRole('button', { name: 'Export content', exact: true }).click();
+      const download = await downloadPromise;
+      const filename = testInfo.outputPath('contact-content.json');
+      await download.saveAs(filename);
+      const exported = JSON.parse(await fs.readFile(filename, 'utf8'));
+      expect(exported.site.contactUrl).toBe('https://github.com/jdowen88-a11y/BINAIUI');
+      expect(exported.site.email).toBe('studio@example.com');
+      await page.getByRole('button', { name: 'Preview draft', exact: true }).click();
+      await goToRoute(page, 'About');
+      await expect(page.getByRole('link', { name: /^Contact link/ })).toHaveAttribute('href', exported.site.contactUrl);
+      await expect(page.getByRole('link', { name: /Email BINAIUI/ })).toHaveAttribute('href', 'mailto:studio%40example.com');
     });
 
     test('studio drafts persist locally, preview, export and restore without changing published content', async ({ page, request }, testInfo) => {
