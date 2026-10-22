@@ -114,7 +114,7 @@ async function importArtworkBatch(files){
  batchFeedback=null;
  draft=collect(false);
  const firstIndex=draft.archive.length;
- const controls=$('#studio-form input, #studio-form select, #studio-form textarea, #studio-form button');
+ const controls=$$('#studio-form input, #studio-form select, #studio-form textarea, #studio-form button');
  controls.forEach(control=>{if(control.id!=='cancel-batch')control.disabled=true;});
  $('#cancel-batch').hidden=false;
  const progress=message=>{const el=$('#batch-progress');if(el)el.textContent=message;};
@@ -155,7 +155,7 @@ async function importArtworkBatch(files){
   if(route()==='studio'){
    render();
    if(imported){
-    const first=$('.editor-entry')[firstIndex];
+    const first=$$('.editor-entry')[firstIndex];
     if(first){first.open=true;first.scrollIntoView({block:'nearest'});}
    }
   }
@@ -273,7 +273,7 @@ function bindStudio(){
  };
  $('#cancel-batch').onclick=()=>{batchCancelled=true;const progress=$('#batch-progress');if(progress)progress.textContent='Stopping after the current image…';};
  $('#export-originals').onclick=()=>{void exportOriginalBackups();};
- $('[data-download-original]').forEach(button=>button.onclick=()=>{void downloadSavedOriginal(button.dataset.downloadOriginal);});
+ $$('[data-download-original]').forEach(button=>button.onclick=()=>{void downloadSavedOriginal(button.dataset.downloadOriginal);});
  $('#studio-form').onsubmit=e=>{e.preventDefault();save();};
  $('#preview-draft').onclick=()=>{const next=readEditor();if(next){draft=next;preview=true;location.hash='home';toast('Local preview for this session. Save or export your draft in Studio.');}};
  $('#export-content').onclick=()=>{const next=readEditor();if(next){draft=next;downloadFile('content.json',JSON.stringify(draft,null,2)+'\n');toast('Content exported. Keep the backup in Files.');}};
