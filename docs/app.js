@@ -10,6 +10,40 @@ const safeImage = s => /^\.\/(helix|prism|seed|intersection|lattice|current)\.sv
 const id = () => 'entry-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now()+'-'+Math.random().toString(36).slice(2));
 
 const ORIGINALS_DATABASE='binaiui-artwork-originals-v1';
+const originalBackupKey=entryId=>'binaiui-original:'+location.pathname+':'+entryId;
+const SMALL_ORIGINAL_BACKUP_LIMIT=256*1024;
+function fileAsDataURL(blob){
+ return new Promise((resolve,reject)=>{
+  const reader=new FileReader();
+  reader.onload=()=>resolve(reader.result);
+  reader.onerror=()=>reject(reader.error||Error('Original could not be read.'));
+  reader.readAsDataURL(blob);
+ });
+}
+async function backupSmallOriginal(record){
+ if(record.size>SMALL_ORIGINAL_BACKUP_LIMIT)return false;
+ try{
+  const dataURL=await fileAsDataURL(record.blob);
+  if(!/^data:image\/(jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(dataURL))return false;
+  localStorage.setItem(originalBackupKey(record.id),JSON.stringify({
+   name:record.name,type:record.type,size:record.size,lastModified:record.lastModified,dataURL
+  }));
+  return true;
+ }catch{return false;}
+}
+function readSmallOriginalBackup(entryId){
+ try{
+  const raw=localStorage.getItem(originalBackupKey(entryId));
+  if(!raw)return null;
+  const stored=JSON.parse(raw),match=/^data:image\/(jpeg|png|webp);base64,([a-z0-9+/=]+)$/i.exec(stored.dataURL);
+  if(!match||!Number.isSafeInteger(stored.size)||stored.size>SMALL_ORIGINAL_BACKUP_LIMIT)return null;
+  const binary=atob(match[2]),bytes=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+  if(bytes.length!==stored.size)return null;
+  return {id:entryId,name:stored.name,type:stored.type,size:stored.size,
+   lastModified:stored.lastModified,blob:new Blob([bytes],{type:stored.type})};
+ }catch{return null;}
+}
 const pendingOriginals=new Map();
 const originalObjectUrls=new Set();
 function releaseOriginalObjectUrls(){for(const url of originalObjectUrls)URL.revokeObjectURL(url);originalObjectUrls.clear();}
@@ -29,7 +63,10 @@ function openOriginalsDatabase(){
  });
 }
 async function preserveOriginal(entryId,file){
- const record={id:entryId,name:file.name,type:file.type,size:file.size,lastModified:file.lastModified,blob:file};
+ const record={id:entryId,name:file.name,type:file.type,size:file.size,lastModified:file.lastModified,
+  blob:new Blob([file],{type:file.type})};
+ // A small separate backup helps recover files on Safari if IndexedDB cannot reload.
+ const hasSmallBackup=await backupSmallOriginal(record);
  let db;
  try{
   db=await openOriginalsDatabase();
@@ -43,8 +80,8 @@ async function preserveOriginal(entryId,file){
   pendingOriginals.delete(entryId);
   return true;
  }catch{
-  pendingOriginals.set(entryId,record);
-  return false;
+  if(!hasSmallBackup)pendingOriginals.set(entryId,record);
+  return hasSmallBackup;
  }finally{if(db)db.close();}
 }
 async function findOriginal(entryId){
@@ -52,14 +89,18 @@ async function findOriginal(entryId){
  let db;
  try{
   db=await openOriginalsDatabase();
-  return await new Promise((resolve,reject)=>{
+  const stored=await new Promise((resolve,reject)=>{
    const transaction=db.transaction('files','readonly');
    const request=transaction.objectStore('files').get(entryId);
    request.onsuccess=()=>resolve(request.result||null);
    request.onerror=()=>reject(request.error||Error('Original could not be read.'));
    transaction.onabort=()=>reject(transaction.error||Error('Original read was interrupted.'));
   });
- }catch{return null;}finally{if(db)db.close();}
+  if(stored?.blob?.size)return stored;
+ }catch{
+  // IndexedDB can be unavailable or evicted on mobile browsers.
+ }finally{if(db)db.close();}
+ return readSmallOriginalBackup(entryId);
 }
 async function resizeBatchImage(file){
  if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size===0||file.size>12*1024*1024){
@@ -275,7 +316,7 @@ function bindStudio(){
   const container=link.closest('details');
   let loading=false;
   const prepare=async()=>{
-   if(loading||!container.open||link.href||!link.isConnected)return;
+   if(loading||link.href||!link.isConnected)return;
    loading=true;
    const record=await findOriginal(link.dataset.originalLink);
    if(!link.isConnected)return;
@@ -291,6 +332,7 @@ function bindStudio(){
    link.textContent='Download original';
    link.removeAttribute('aria-disabled');
   };
+  container.querySelector('summary').addEventListener('click',()=>{void prepare();});
   container.addEventListener('toggle',()=>{if(container.open)void prepare();});
   if(container.open)void prepare();
  });
