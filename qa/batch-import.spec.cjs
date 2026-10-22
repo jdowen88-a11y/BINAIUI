@@ -112,6 +112,39 @@ for (const prefix of ['/', '/BINAIUI/']) {
       expect(exported.archive[59].title).toBe('last-open-slot');
     });
 
+    test('cancel keeps completed entries while stopping the remaining selected files', async ({ page, request }) => {
+      await page.addInitScript(() => {
+        const NativeImage = window.Image;
+        window.Image = function (...args) {
+          const image = new NativeImage(...args);
+          Object.defineProperty(image, 'onload', {
+            configurable: true,
+            set(handler) {
+              image.addEventListener('load', () => setTimeout(handler, 250), { once: true });
+            }
+          });
+          return image;
+        };
+      });
+      const png = await (await request.get(prefix + 'icon-192.png')).body();
+      await page.goto(prefix + '#studio');
+      const files = Array.from({length:20}, (_,i) => ({
+        name:'cancel-'+i+'.png',mimeType:'image/png',buffer:png
+      }));
+      await page.locator('#batch-images').setInputFiles(files);
+      await expect(page.locator('#batch-progress')).toContainText('Processing 2 of 20');
+      await page.getByRole('button', {name:'Cancel import',exact:true}).click();
+      await expect(page.locator('#batch-results')).toContainText('Import cancelled');
+      const description = await page.locator('#batch-results').innerText();
+      const match = description.match(/Imported (\d+) of 20/);
+      expect(match).toBeTruthy();
+      expect(Number(match[1])).toBeGreaterThanOrEqual(1);
+      expect(Number(match[1])).toBeLessThan(20);
+      const importedEntries = await page.locator('.editor-entry').count();
+      expect(importedEntries).toBeGreaterThanOrEqual(7);
+      expect(importedEntries).toBeLessThan(26);
+    });
+
     test('storage failure retains successful imports and downloadable original in open tab', async ({ page, request }, testInfo) => {
       await page.addInitScript(() => {
         Storage.prototype.setItem = function () {
