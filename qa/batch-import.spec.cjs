@@ -37,7 +37,9 @@ for (const prefix of ['/', '/BINAIUI/']) {
       const loaded = page.locator('.editor-entry').nth(6);
       await loaded.locator('summary').click();
       const originalEvent = page.waitForEvent('download');
-      await loaded.getByRole('button', { name: 'Download original (if saved)' }).click();
+      const originalLink = loaded.getByRole('link', { name: 'Download original', exact: true });
+      await expect(originalLink).toHaveAttribute('href', /^blob:/);
+      await originalLink.click();
       const original = await originalEvent;
       expect(original.suggestedFilename()).toBe('opal_glow.png');
       const originalPath = testInfo.outputPath('opal_original.png');
@@ -57,7 +59,7 @@ for (const prefix of ['/', '/BINAIUI/']) {
         ' assert len(manifest["artworks"])==3',
         ' assert len(z.namelist())==4',
         ' assert all(name.startswith("originals/") for name in z.namelist())',
-        ' assert all(z.read(name).startswith(b"\x89PNG\r\n\x1a\n") for name in z.namelist() if name.endswith(".png"))',
+        ' assert all(z.read(name)[:8].hex()=="89504e470d0a1a0a" for name in z.namelist() if name.endswith(".png"))',
         'print("verified original backup")'
       ].join('\n'),zipPath], { encoding: 'utf8' });
       expect(output).toContain('verified original backup');
@@ -124,8 +126,8 @@ for (const prefix of ['/', '/BINAIUI/']) {
         { name:'recovery-b.png',mimeType:'image/png',buffer:png }
       ]);
       await expect(page.locator('#batch-results')).toContainText('Imported 2 of 2');
-      await expect(page.locator('#batch-results')).toContainText('remain in this open tab');
-      await expect(page.locator('#batch-results')).toContainText('Export content');
+      await expect(page.locator('#batch-results')).toContainText('remain only in this open tab');
+      await expect(page.locator('#batch-results')).toContainText('export content before leaving');
       const contentEvent=page.waitForEvent('download');
       await page.getByRole('button',{name:'Export content',exact:true}).click();
       const exportedDownload=await contentEvent;
@@ -136,7 +138,9 @@ for (const prefix of ['/', '/BINAIUI/']) {
       const entry=page.locator('.editor-entry').nth(6);
       if (!(await entry.evaluate(element => element.open))) await entry.locator('summary').click();
       const originalEvent=page.waitForEvent('download');
-      await entry.getByRole('button',{name:'Download original (if saved)'}).click();
+      const originalLink=entry.getByRole('link',{name:'Download original',exact:true});
+      await expect(originalLink).toHaveAttribute('href',/^blob:/);
+      await originalLink.click();
       const originalDownload=await originalEvent;
       const path=testInfo.outputPath('failure-original.png');
       await originalDownload.saveAs(path);
