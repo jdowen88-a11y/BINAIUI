@@ -18,7 +18,7 @@ for (const prefix of ['/', '/BINAIUI/']) {
       const titles = await Promise.all([6,7,8].map(i => page.locator('input[name="a'+i+'-title"]').inputValue()));
       expect(titles).toEqual(['opal glow', 'opal glow (2)', 'sapphire bloom']);
       const first = page.locator('.editor-entry').nth(6);
-      await first.locator('summary').click();
+      if (!(await first.evaluate(element => element.open))) await first.locator('summary').click();
       await first.getByLabel('Image description (alt text)', { exact: true }).fill('A new violet opal artwork.');
       await first.getByLabel('Caption', { exact: true }).fill('Opal light in a self-generating field.');
       const downloadEvent = page.waitForEvent('download');
@@ -134,7 +134,7 @@ for (const prefix of ['/', '/BINAIUI/']) {
       const data=JSON.parse(await fs.readFile(contentPath,'utf8'));
       expect(data.archive).toHaveLength(8);
       const entry=page.locator('.editor-entry').nth(6);
-      await entry.locator('summary').click();
+      if (!(await entry.evaluate(element => element.open))) await entry.locator('summary').click();
       const originalEvent=page.waitForEvent('download');
       await entry.getByRole('button',{name:'Download original (if saved)'}).click();
       const originalDownload=await originalEvent;
