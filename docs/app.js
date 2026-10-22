@@ -11,6 +11,8 @@ const id = () => 'entry-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now(
 
 const ORIGINALS_DATABASE='binaiui-artwork-originals-v1';
 const pendingOriginals=new Map();
+const originalObjectUrls=new Set();
+function releaseOriginalObjectUrls(){for(const url of originalObjectUrls)URL.revokeObjectURL(url);originalObjectUrls.clear();}
 let batchBusy=false, batchCancelled=false, batchFeedback=null;
 
 function openOriginalsDatabase(){
@@ -162,11 +164,6 @@ async function importArtworkBatch(files){
   toast('Batch import: '+imported+' added, '+errors.length+' skipped.'+(warnings.length?' Backup warning.':''));
  }
 }
-async function downloadSavedOriginal(entryId){
- const record=await findOriginal(entryId);
- if(!record){toast('No original is saved for this entry on this device. Keep your source file in Photos or Files.');return;}
- downloadFile(record.name,record.blob,record.type||'application/octet-stream');
-}
 async function exportOriginalBackups(){
  const button=$('#export-originals');
  if(!button)return;
@@ -233,7 +230,7 @@ function about(){const s=data().site;return '<section class="page">'+head('About
 const field=(label,name,value,type='text',max=500,required=false)=>'<div class="field"><label for="'+name+'">'+esc(label)+'</label><input id="'+name+'" name="'+name+'" type="'+type+'" value="'+esc(value)+'" maxlength="'+max+'" '+(required?'required':'')+'></div>';
 const area=(label,name,value,max=3000)=>'<div class="field"><label for="'+name+'">'+esc(label)+'</label><textarea id="'+name+'" name="'+name+'" maxlength="'+max+'" required>'+esc(value)+'</textarea></div>';
 function select(label,name,value,opts){return '<div class="field"><label for="'+name+'">'+label+'</label><select id="'+name+'" name="'+name+'">'+opts.map(o=>'<option '+(o===value?'selected':'')+'>'+o+'</option>').join('')+'</select></div>';}
-function archiveEditor(v,i){const n='a'+i+'-';return '<details class="editor-entry"><summary>'+esc(v.title||'New image')+'</summary><div>'+field('Image title',n+'title',v.title,'text',100,true)+'<div class="form-grid">'+select('Category',n+'category',v.category,['Geometry','Organic','Systems'])+field('Date or period',n+'date',v.date,'text',30)+'</div>'+area('Image description (alt text)',n+'alt',v.alt,500)+area('Caption',n+'caption',v.caption)+'<img class="editor-image" id="'+n+'thumb" src="'+esc(v.image)+'" alt=""><input type="hidden" name="'+n+'image" value="'+esc(v.image)+'"><div class="field"><label for="'+n+'upload">Choose image from Photos or Files</label><input id="'+n+'upload" type="file" accept="image/jpeg,image/png,image/webp" data-upload="'+i+'"></div>'+(v.sample?'':'<button class="text-link" type="button" data-download-original="'+esc(v.id)+'">Download original (if saved)</button>')+'<p class="help">JPEG, PNG, or WebP, up to 12 MB. Resized to 1200 px and embedded in your content file. No image-hosting account needed.</p><label class="help"><input type="checkbox" name="'+n+'featured" '+(v.featured?'checked':'')+'> Feature this image on Home</label><br><button class="danger" type="button" data-remove-archive="'+i+'">Remove '+esc(v.title||'image')+'</button></div></details>';}
+function archiveEditor(v,i){const n='a'+i+'-';return '<details class="editor-entry"><summary>'+esc(v.title||'New image')+'</summary><div>'+field('Image title',n+'title',v.title,'text',100,true)+'<div class="form-grid">'+select('Category',n+'category',v.category,['Geometry','Organic','Systems'])+field('Date or period',n+'date',v.date,'text',30)+'</div>'+area('Image description (alt text)',n+'alt',v.alt,500)+area('Caption',n+'caption',v.caption)+'<img class="editor-image" id="'+n+'thumb" src="'+esc(v.image)+'" alt=""><input type="hidden" name="'+n+'image" value="'+esc(v.image)+'"><div class="field"><label for="'+n+'upload">Choose image from Photos or Files</label><input id="'+n+'upload" type="file" accept="image/jpeg,image/png,image/webp" data-upload="'+i+'"></div>'+(v.sample?'':'<a class="text-link" data-original-link="'+esc(v.id)+'" aria-disabled="true">Preparing original…</a>')+'<p class="help">JPEG, PNG, or WebP, up to 12 MB. Resized to 1200 px and embedded in your content file. No image-hosting account needed.</p><label class="help"><input type="checkbox" name="'+n+'featured" '+(v.featured?'checked':'')+'> Feature this image on Home</label><br><button class="danger" type="button" data-remove-archive="'+i+'">Remove '+esc(v.title||'image')+'</button></div></details>';}
 function projectEditor(v,i){const n='p'+i+'-';return '<details class="editor-entry"><summary>'+esc(v.title||'New project')+'</summary><div>'+field('Project title',n+'title',v.title,'text',100,true)+select('Status',n+'status',v.status,['Prototype','Concept'])+area('Summary',n+'summary',v.summary,500)+area('Research notes',n+'notes',v.notes,10000)+field('Source link (https://)',n+'url',v.url,'url',1500)+'<button class="danger" type="button" data-remove-project="'+i+'">Remove '+esc(v.title||'project')+'</button></div></details>';}
 function studio(){return '<section class="page studio-layout">'+head('Your mobile workspace','Studio.','Keep collecting. Keep the current moving.')+'<div class="notice"><p>Studio saves drafts on this device only. It is not a private admin account. To publish, export content.json and upload it to the GitHub repository. Keep a backup in Files; browser storage can be cleared.</p></div><form id="studio-form"><div class="form-section"><h2>The introduction</h2>'+area('Introduction','introduction',draft.site.introduction,1000)+area('About text','about',draft.site.about,10000)+'<div class="form-grid">'+field('Contact email','email',draft.site.email,'email',254)+field('Contact link','contactUrl',draft.site.contactUrl,'url',1500)+'</div><p class="help">Contact fields are optional. Only https:// contact links are accepted.</p></div><div class="form-section"><h2>Archive</h2>'+draft.archive.map(archiveEditor).join('')+batchControls()+'<button class="text-link" type="button" id="add-archive">+ Add image</button></div><div class="form-section"><h2>Research</h2>'+draft.projects.map(projectEditor).join('')+'<button class="text-link" type="button" id="add-project">+ Add project</button></div><p class="form-error" id="form-error" role="alert"></p><div class="studio-actions"><button class="button" type="submit">Save draft</button><button class="button secondary" type="button" id="preview-draft">Preview draft</button><button class="button secondary" type="button" id="export-content">Export content</button></div></form><div class="form-section"><h2>Back up & continue</h2><div class="field"><label for="import-content">Import content</label><input type="file" id="import-content" accept=".json,application/json"></div><p class="help">Import an exported content.json backup. It becomes your local draft; the published site stays unchanged.</p><button class="danger" type="button" id="restore">Restore published</button></div><div class="studio-actions"><button class="button" id="download-site" type="button">Download website ZIP</button><a class="button secondary" href="#publish">Publishing guide ↗</a></div><p class="help">Website ZIP uses your current valid draft. Save to keep a copy on this phone. It includes all files for a standalone static website.</p></section>';}
 function publish(){return '<section class="page guide">'+head('From your iPhone','Ready for the world.','Free hosting. No terminal. No build command.')+'<div class="notice"><p>This app is prepared for the existing <a href="https://github.com/jdowen88-a11y/BINAIUI" target="_blank" rel="noopener noreferrer">BINAIUI repository</a>. Review and merge the app branch, then serve main → /docs. Existing canon and Python files stay in place.</p></div><ol class="guide-list"><li><div><h3>Make it yours</h3><p>Open <a href="#studio">Studio</a>. Add your real contact details and images, edit the research notes, and tap Save draft. Preview your draft to review all four sections.</p></div></li><li><div><h3>Review the GitHub changes</h3><p>In Safari, open your BINAIUI repository and the mobile PWA pull request. Review Files changed and the browser checks, then merge when you are ready to publish.</p></div></li><li><div><h3>Upload your content</h3><p>In Studio tap Export content. Save content.json to Files. In Safari, open the repository’s docs folder, choose Add file → Upload files, select your new content.json, and commit the replacement.</p><p>If Safari hides an upload or Settings control, use aA → Request Desktop Website. For a single file you can also use GitHub’s pencil editor in Safari.</p></div></li><li><div><h3>Enable free GitHub Pages</h3><p>Open Settings → Pages. Under Build and deployment, choose Deploy from a branch, select main and /docs, then Save. A public repository is eligible for free Pages.</p></div></li><li><div><h3>Open the published address</h3><p>Wait for GitHub’s Pages deployment to finish. Use the address displayed in Settings → Pages. For this repository it should be <code>https://jdowen88-a11y.github.io/BINAIUI/</code>. That address is expected, not a claim that the site is live.</p></div></li><li><div><h3>Install and check on your iPhone</h3><p>Open the live site in Safari. Share → Add to Home Screen → Add. Launch it from Home Screen, view each section online, then enable Airplane Mode and reopen it to check offline use.</p></div></li></ol><div class="form-section"><h2>Starting in another repository?</h2><p>Download the website ZIP from Studio, save it in Files, and tap it to uncompress. Create a public repository in Safari. Upload the files inside the extracted folder, with index.html at the repository root. Enable Pages from main → / (root). Upload files, not the ZIP itself.</p><p class="help">For later content changes, export and replace content.json in that repository. A custom domain is optional. No API keys or paid backend are required.</p><button class="button" id="download-site" type="button">Download website ZIP</button></div><div class="form-section"><h2>Before you publish</h2><p>Review the sample artwork, add a public contact address if you want people to reach you, check all source links, and review the test results. Physical iPhone installation, Safari image picking, and Home Screen offline launch still need verification on your device after deployment.</p></div></section>';}
@@ -241,6 +238,7 @@ function install(){return '<section class="page guide">'+head('Keep it close','A
 function render(){ if(!published)return;
  const r=route();const pages={home,archive,projects,about,studio,publish,install};
  if(!pages[r]){location.hash='home';return;}
+ releaseOriginalObjectUrls();
  main.innerHTML=pages[r]();
  $$('#draft-banner')[0].hidden=!preview;
  $$('nav a').forEach(a=>{a.removeAttribute('aria-current');if(a.getAttribute('href')==='#'+r)a.setAttribute('aria-current','page');});
@@ -273,7 +271,29 @@ function bindStudio(){
  };
  $('#cancel-batch').onclick=()=>{batchCancelled=true;const progress=$('#batch-progress');if(progress)progress.textContent='Stopping after the current image…';};
  $('#export-originals').onclick=()=>{void exportOriginalBackups();};
- $$('[data-download-original]').forEach(button=>button.onclick=()=>{void downloadSavedOriginal(button.dataset.downloadOriginal);});
+ $$('[data-original-link]').forEach(link=>{
+  const container=link.closest('details');
+  let loading=false;
+  const prepare=async()=>{
+   if(loading||!container.open||link.href||!link.isConnected)return;
+   loading=true;
+   const record=await findOriginal(link.dataset.originalLink);
+   if(!link.isConnected)return;
+   if(!record){
+    link.textContent='Original unavailable on this device';
+    link.setAttribute('aria-disabled','true');
+    return;
+   }
+   const url=URL.createObjectURL(record.blob);
+   originalObjectUrls.add(url);
+   link.href=url;
+   link.download=record.name;
+   link.textContent='Download original';
+   link.removeAttribute('aria-disabled');
+  };
+  container.addEventListener('toggle',()=>{if(container.open)void prepare();});
+  if(container.open)void prepare();
+ });
  $('#studio-form').onsubmit=e=>{e.preventDefault();save();};
  $('#preview-draft').onclick=()=>{const next=readEditor();if(next){draft=next;preview=true;location.hash='home';toast('Local preview for this session. Save or export your draft in Studio.');}};
  $('#export-content').onclick=()=>{const next=readEditor();if(next){draft=next;downloadFile('content.json',JSON.stringify(draft,null,2)+'\n');toast('Content exported. Keep the backup in Files.');}};
