@@ -49,8 +49,9 @@ Use **Cancel import** to stop after the current file. The archive still has a
 each successful image; a visible warning explains if device storage is full.
 
 Resized display versions are embedded in content.json and the website ZIP. Original
-images are stored separately in this browser's IndexedDB when available, with an
-in-memory fallback if original storage fails. The importer shows a warning when a
+images are stored separately in this browser's IndexedDB when available. Small
+originals (256 KB or less) also receive a separate local-browser backup for Safari
+recovery; if browser storage fails, originals stay in memory for the open tab. The importer shows a warning when a
 file could not be saved persistently. Use **Download original (if saved)** inside
 an artwork entry to retrieve an individual source file, or **Download originals
 backup ZIP** to save the retained originals and a metadata manifest to Files.
