@@ -8,6 +8,195 @@ const key = 'binaiui-draft:' + location.pathname;
 const safeLink = s => { try { const u=new URL(s); return u.protocol === 'https:' ? u.href : ''; } catch { return ''; } };
 const safeImage = s => /^\.\/(helix|prism|seed|intersection|lattice|current)\.svg$/i.test(s) || /^data:image\/(jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(s);
 const id = () => 'entry-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now()+'-'+Math.random().toString(36).slice(2));
+
+const ORIGINALS_DATABASE='binaiui-artwork-originals-v1';
+const pendingOriginals=new Map();
+let batchBusy=false, batchCancelled=false, batchFeedback=null;
+
+function openOriginalsDatabase(){
+ return new Promise((resolve,reject)=>{
+  if(!window.indexedDB){reject(Error('Original storage is unavailable.'));return;}
+  let request;
+  try{request=indexedDB.open(ORIGINALS_DATABASE,1);}catch(error){reject(error);return;}
+  request.onupgradeneeded=()=>{
+   if(!request.result.objectStoreNames.contains('files'))request.result.createObjectStore('files',{keyPath:'id'});
+  };
+  request.onsuccess=()=>resolve(request.result);
+  request.onerror=()=>reject(request.error||Error('Original storage failed.'));
+  request.onblocked=()=>reject(Error('Original storage is blocked.'));
+ });
+}
+async function preserveOriginal(entryId,file){
+ const record={id:entryId,name:file.name,type:file.type,size:file.size,lastModified:file.lastModified,blob:file};
+ let db;
+ try{
+  db=await openOriginalsDatabase();
+  await new Promise((resolve,reject)=>{
+   const transaction=db.transaction('files','readwrite');
+   transaction.objectStore('files').put(record);
+   transaction.oncomplete=()=>resolve();
+   transaction.onerror=()=>reject(transaction.error||Error('Original storage failed.'));
+   transaction.onabort=()=>reject(transaction.error||Error('Original storage was interrupted.'));
+  });
+  pendingOriginals.delete(entryId);
+  return true;
+ }catch{
+  pendingOriginals.set(entryId,record);
+  return false;
+ }finally{if(db)db.close();}
+}
+async function findOriginal(entryId){
+ if(pendingOriginals.has(entryId))return pendingOriginals.get(entryId);
+ let db;
+ try{
+  db=await openOriginalsDatabase();
+  return await new Promise((resolve,reject)=>{
+   const transaction=db.transaction('files','readonly');
+   const request=transaction.objectStore('files').get(entryId);
+   request.onsuccess=()=>resolve(request.result||null);
+   request.onerror=()=>reject(request.error||Error('Original could not be read.'));
+   transaction.onabort=()=>reject(transaction.error||Error('Original read was interrupted.'));
+  });
+ }catch{return null;}finally{if(db)db.close();}
+}
+async function resizeBatchImage(file){
+ if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size===0||file.size>12*1024*1024){
+  throw Error('Choose a JPEG, PNG, or WebP image up to 12 MB. Export HEIC as JPEG first.');
+ }
+ const url=URL.createObjectURL(file),image=new Image();
+ try{
+  await new Promise((resolve,reject)=>{
+   image.onload=resolve;
+   image.onerror=()=>reject(Error('Image could not be decoded.'));
+   image.src=url;
+  });
+  if(!image.naturalWidth||!image.naturalHeight)throw Error('Image has no usable dimensions.');
+  const scale=Math.min(1,1200/Math.max(image.naturalWidth,image.naturalHeight));
+  const canvas=document.createElement('canvas');
+  canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));
+  canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));
+  const context=canvas.getContext('2d');
+  if(!context)throw Error('Image processing is unavailable on this device.');
+  context.fillStyle='#edeae4';
+  context.fillRect(0,0,canvas.width,canvas.height);
+  context.drawImage(image,0,0,canvas.width,canvas.height);
+  const resized=canvas.toDataURL('image/jpeg',.82);
+  if(resized.length>3000000||!safeImage(resized))throw Error('Resized image exceeds the content-file limit.');
+  return resized;
+ }finally{URL.revokeObjectURL(url);}
+}
+function importedTitle(filename,entries){
+ const base=filename.replace(/\.[^.]+$/,'').replace(/[_]+/g,' ').replace(/[\u0000-\u001f\u007f]/g,'').trim().slice(0,100)||'Untitled artwork';
+ let title=base,serial=2;
+ while(entries.some(entry=>entry.title.toLowerCase()===title.toLowerCase())){
+  const suffix=' ('+serial+++')';
+  title=base.slice(0,100-suffix.length)+suffix;
+ }
+ return title;
+}
+function freshArtworkId(){
+ const used=new Set([...draft.archive,...draft.projects].map(entry=>entry.id));
+ let candidate=id();
+ while(used.has(candidate))candidate=id();
+ return candidate;
+}
+function batchControls(){
+ const feedback=batchFeedback;
+ const errors=feedback&&feedback.errors.length?'<ul>'+feedback.errors.slice(0,8).map(error=>'<li>'+esc(error)+'</li>').join('')+'</ul>':'';
+ const more=feedback&&feedback.errors.length>8?'<p class="help">'+(feedback.errors.length-8)+' more files were skipped.</p>':'';
+ const summary=feedback?'<div class="notice" id="batch-results" role="status"><p>'+esc(feedback.summary)+'</p>'+(feedback.warning?'<p>'+esc(feedback.warning)+'</p>':'')+errors+more+'</div>':'';
+ return '<div class="field"><label for="batch-images">Add multiple artworks from Photos or Files</label><input id="batch-images" type="file" accept="image/jpeg,image/png,image/webp" multiple '+(batchBusy?'disabled':'')+'></div><p class="help">Select multiple JPEG, PNG or WebP images. Each becomes a separate editable artwork. Titles, descriptions and captions are starting points: review them before export. Originals are kept separately in this browser when storage permits.</p><p id="batch-progress" role="status" aria-live="polite"></p><button id="cancel-batch" type="button" class="button secondary" '+(batchBusy?'':'hidden')+'>Cancel import</button><button id="export-originals" type="button" class="button secondary">Download originals backup ZIP</button><p class="help">Originals are not included in content.json or the website ZIP. Back them up separately; local browser files can be cleared.</p>'+summary;
+}
+async function importArtworkBatch(files){
+ if(batchBusy||!files.length)return;
+ batchBusy=true;
+ batchCancelled=false;
+ batchFeedback=null;
+ draft=collect(false);
+ const firstIndex=draft.archive.length;
+ const controls=$('#studio-form input, #studio-form select, #studio-form textarea, #studio-form button');
+ controls.forEach(control=>{if(control.id!=='cancel-batch')control.disabled=true;});
+ $('#cancel-batch').hidden=false;
+ const progress=message=>{const el=$('#batch-progress');if(el)el.textContent=message;};
+ let imported=0,originalsInMemory=0,checkpointFailed=false;
+ const errors=[];
+ try{
+  for(let index=0;index<files.length;index++){
+   if(batchCancelled)break;
+   const file=files[index];
+   progress('Processing '+(index+1)+' of '+files.length+': '+file.name);
+   if(draft.archive.length>=60){errors.push(file.name+': archive limit of 60 reached.');continue;}
+   try{
+    const resized=await resizeBatchImage(file);
+    if(batchCancelled)break;
+    const title=importedTitle(file.name,draft.archive);
+    const entryId=freshArtworkId();
+    draft.archive.push({id:entryId,title,category:'Organic',image:resized,
+     alt:'Artwork titled '+title+'. Review this description for accessibility.',
+     caption:'Imported artwork. Review and replace this caption.',
+     date:'',featured:false,sample:false});
+    if(!await preserveOriginal(entryId,file))originalsInMemory++;
+    try{localStorage.setItem(key,JSON.stringify(normalize(draft)));}
+    catch{checkpointFailed=true;}
+    imported++;
+   }catch(error){errors.push(file.name+': '+error.message);}
+  }
+ }finally{
+  const cancelled=batchCancelled;
+  batchBusy=false;
+  batchCancelled=false;
+  const warnings=[];
+  if(checkpointFailed)warnings.push('Draft storage failed or some fields are unfinished. Artwork remains in this tab; export content before leaving.');
+  if(originalsInMemory)warnings.push(originalsInMemory+' original(s) could not be stored. They remain only in this open tab; download an originals backup before leaving.');
+  batchFeedback={
+   summary:'Imported '+imported+' of '+files.length+' file(s). '+errors.length+' skipped.'+(cancelled?' Import cancelled; completed artworks were kept.':''),
+   warning:warnings.join(' '),errors
+  };
+  if(route()==='studio'){
+   render();
+   if(imported){
+    const first=$('.editor-entry')[firstIndex];
+    if(first){first.open=true;first.scrollIntoView({block:'nearest'});}
+   }
+  }
+  toast('Batch import: '+imported+' added, '+errors.length+' skipped.'+(warnings.length?' Backup warning.':''));
+ }
+}
+async function downloadSavedOriginal(entryId){
+ const record=await findOriginal(entryId);
+ if(!record){toast('No original is saved for this entry on this device. Keep your source file in Photos or Files.');return;}
+ downloadFile(record.name,record.blob,record.type||'application/octet-stream');
+}
+async function exportOriginalBackups(){
+ const button=$('#export-originals');
+ if(!button)return;
+ button.disabled=true;
+ const old=button.textContent;
+ button.textContent='Preparing original backups…';
+ try{
+  const selected=[],missing=[];
+  let totalSize=0;
+  for(const entry of draft.archive){
+   const original=await findOriginal(entry.id);
+   if(!original){if(!entry.sample&&/^data:image\//.test(entry.image))missing.push(entry.title);continue;}
+   totalSize+=original.blob.size;
+   if(totalSize>120*1024*1024)throw Error('Originals exceed 120 MB. Use Download original for individual entries instead.');
+   selected.push({entry,original});
+  }
+  if(!selected.length)throw Error('No imported originals have been saved in this browser.');
+  const encoder=new TextEncoder();
+  const manifest=selected.map(({entry,original})=>({id:entry.id,title:entry.title,filename:original.name,type:original.type,size:original.size}));
+  const files=[['originals/manifest.json',encoder.encode(JSON.stringify({version:1,artworks:manifest},null,2)+'\n')]];
+  for(const {entry,original} of selected){
+   const filename=(original.name.replace(/[^a-z0-9._-]+/gi,'-').replace(/^\.+/,'').slice(0,80)||'image');
+   files.push(['originals/'+entry.id+'-'+filename,new Uint8Array(await original.blob.arrayBuffer())]);
+  }
+  downloadFile('BINAIUI-originals.zip',zip(files),'application/zip');
+  toast('Originals backup ready: '+selected.length+' file(s).'+(missing.length?' Some uploaded entries have no saved original.':''));
+ }catch(error){toast('Original backup: '+error.message);}
+ finally{button.disabled=false;button.textContent=old;}
+}
+
 let published, draft, preview=false, archiveFilter='All', projectFilter='All', search='', lastRoute='', waitingWorker, toastTimer;
 const main=$('#main');
 const route = () => location.hash.slice(1) || 'home';
@@ -44,9 +233,9 @@ function about(){const s=data().site;return '<section class="page">'+head('About
 const field=(label,name,value,type='text',max=500,required=false)=>'<div class="field"><label for="'+name+'">'+esc(label)+'</label><input id="'+name+'" name="'+name+'" type="'+type+'" value="'+esc(value)+'" maxlength="'+max+'" '+(required?'required':'')+'></div>';
 const area=(label,name,value,max=3000)=>'<div class="field"><label for="'+name+'">'+esc(label)+'</label><textarea id="'+name+'" name="'+name+'" maxlength="'+max+'" required>'+esc(value)+'</textarea></div>';
 function select(label,name,value,opts){return '<div class="field"><label for="'+name+'">'+label+'</label><select id="'+name+'" name="'+name+'">'+opts.map(o=>'<option '+(o===value?'selected':'')+'>'+o+'</option>').join('')+'</select></div>';}
-function archiveEditor(v,i){const n='a'+i+'-';return '<details class="editor-entry"><summary>'+esc(v.title||'New image')+'</summary><div>'+field('Image title',n+'title',v.title,'text',100,true)+'<div class="form-grid">'+select('Category',n+'category',v.category,['Geometry','Organic','Systems'])+field('Date or period',n+'date',v.date,'text',30)+'</div>'+area('Image description (alt text)',n+'alt',v.alt,500)+area('Caption',n+'caption',v.caption)+'<img class="editor-image" id="'+n+'thumb" src="'+esc(v.image)+'" alt=""><input type="hidden" name="'+n+'image" value="'+esc(v.image)+'"><div class="field"><label for="'+n+'upload">Choose image from Photos or Files</label><input id="'+n+'upload" type="file" accept="image/jpeg,image/png,image/webp" data-upload="'+i+'"></div><p class="help">JPEG, PNG, or WebP, up to 12 MB. Resized to 1200 px and embedded in your content file. No image-hosting account needed.</p><label class="help"><input type="checkbox" name="'+n+'featured" '+(v.featured?'checked':'')+'> Feature this image on Home</label><br><button class="danger" type="button" data-remove-archive="'+i+'">Remove '+esc(v.title||'image')+'</button></div></details>';}
+function archiveEditor(v,i){const n='a'+i+'-';return '<details class="editor-entry"><summary>'+esc(v.title||'New image')+'</summary><div>'+field('Image title',n+'title',v.title,'text',100,true)+'<div class="form-grid">'+select('Category',n+'category',v.category,['Geometry','Organic','Systems'])+field('Date or period',n+'date',v.date,'text',30)+'</div>'+area('Image description (alt text)',n+'alt',v.alt,500)+area('Caption',n+'caption',v.caption)+'<img class="editor-image" id="'+n+'thumb" src="'+esc(v.image)+'" alt=""><input type="hidden" name="'+n+'image" value="'+esc(v.image)+'"><div class="field"><label for="'+n+'upload">Choose image from Photos or Files</label><input id="'+n+'upload" type="file" accept="image/jpeg,image/png,image/webp" data-upload="'+i+'"></div>'+(v.sample?'':'<button class="text-link" type="button" data-download-original="'+esc(v.id)+'">Download original (if saved)</button>')+'<p class="help">JPEG, PNG, or WebP, up to 12 MB. Resized to 1200 px and embedded in your content file. No image-hosting account needed.</p><label class="help"><input type="checkbox" name="'+n+'featured" '+(v.featured?'checked':'')+'> Feature this image on Home</label><br><button class="danger" type="button" data-remove-archive="'+i+'">Remove '+esc(v.title||'image')+'</button></div></details>';}
 function projectEditor(v,i){const n='p'+i+'-';return '<details class="editor-entry"><summary>'+esc(v.title||'New project')+'</summary><div>'+field('Project title',n+'title',v.title,'text',100,true)+select('Status',n+'status',v.status,['Prototype','Concept'])+area('Summary',n+'summary',v.summary,500)+area('Research notes',n+'notes',v.notes,10000)+field('Source link (https://)',n+'url',v.url,'url',1500)+'<button class="danger" type="button" data-remove-project="'+i+'">Remove '+esc(v.title||'project')+'</button></div></details>';}
-function studio(){return '<section class="page studio-layout">'+head('Your mobile workspace','Studio.','Keep collecting. Keep the current moving.')+'<div class="notice"><p>Studio saves drafts on this device only. It is not a private admin account. To publish, export content.json and upload it to the GitHub repository. Keep a backup in Files; browser storage can be cleared.</p></div><form id="studio-form"><div class="form-section"><h2>The introduction</h2>'+area('Introduction','introduction',draft.site.introduction,1000)+area('About text','about',draft.site.about,10000)+'<div class="form-grid">'+field('Contact email','email',draft.site.email,'email',254)+field('Contact link','contactUrl',draft.site.contactUrl,'url',1500)+'</div><p class="help">Contact fields are optional. Only https:// contact links are accepted.</p></div><div class="form-section"><h2>Archive</h2>'+draft.archive.map(archiveEditor).join('')+'<button class="text-link" type="button" id="add-archive">+ Add image</button></div><div class="form-section"><h2>Research</h2>'+draft.projects.map(projectEditor).join('')+'<button class="text-link" type="button" id="add-project">+ Add project</button></div><p class="form-error" id="form-error" role="alert"></p><div class="studio-actions"><button class="button" type="submit">Save draft</button><button class="button secondary" type="button" id="preview-draft">Preview draft</button><button class="button secondary" type="button" id="export-content">Export content</button></div></form><div class="form-section"><h2>Back up & continue</h2><div class="field"><label for="import-content">Import content</label><input type="file" id="import-content" accept=".json,application/json"></div><p class="help">Import an exported content.json backup. It becomes your local draft; the published site stays unchanged.</p><button class="danger" type="button" id="restore">Restore published</button></div><div class="studio-actions"><button class="button" id="download-site" type="button">Download website ZIP</button><a class="button secondary" href="#publish">Publishing guide ↗</a></div><p class="help">Website ZIP uses your current valid draft. Save to keep a copy on this phone. It includes all files for a standalone static website.</p></section>';}
+function studio(){return '<section class="page studio-layout">'+head('Your mobile workspace','Studio.','Keep collecting. Keep the current moving.')+'<div class="notice"><p>Studio saves drafts on this device only. It is not a private admin account. To publish, export content.json and upload it to the GitHub repository. Keep a backup in Files; browser storage can be cleared.</p></div><form id="studio-form"><div class="form-section"><h2>The introduction</h2>'+area('Introduction','introduction',draft.site.introduction,1000)+area('About text','about',draft.site.about,10000)+'<div class="form-grid">'+field('Contact email','email',draft.site.email,'email',254)+field('Contact link','contactUrl',draft.site.contactUrl,'url',1500)+'</div><p class="help">Contact fields are optional. Only https:// contact links are accepted.</p></div><div class="form-section"><h2>Archive</h2>'+draft.archive.map(archiveEditor).join('')+batchControls()+'<button class="text-link" type="button" id="add-archive">+ Add image</button></div><div class="form-section"><h2>Research</h2>'+draft.projects.map(projectEditor).join('')+'<button class="text-link" type="button" id="add-project">+ Add project</button></div><p class="form-error" id="form-error" role="alert"></p><div class="studio-actions"><button class="button" type="submit">Save draft</button><button class="button secondary" type="button" id="preview-draft">Preview draft</button><button class="button secondary" type="button" id="export-content">Export content</button></div></form><div class="form-section"><h2>Back up & continue</h2><div class="field"><label for="import-content">Import content</label><input type="file" id="import-content" accept=".json,application/json"></div><p class="help">Import an exported content.json backup. It becomes your local draft; the published site stays unchanged.</p><button class="danger" type="button" id="restore">Restore published</button></div><div class="studio-actions"><button class="button" id="download-site" type="button">Download website ZIP</button><a class="button secondary" href="#publish">Publishing guide ↗</a></div><p class="help">Website ZIP uses your current valid draft. Save to keep a copy on this phone. It includes all files for a standalone static website.</p></section>';}
 function publish(){return '<section class="page guide">'+head('From your iPhone','Ready for the world.','Free hosting. No terminal. No build command.')+'<div class="notice"><p>This app is prepared for the existing <a href="https://github.com/jdowen88-a11y/BINAIUI" target="_blank" rel="noopener noreferrer">BINAIUI repository</a>. Review and merge the app branch, then serve main → /docs. Existing canon and Python files stay in place.</p></div><ol class="guide-list"><li><div><h3>Make it yours</h3><p>Open <a href="#studio">Studio</a>. Add your real contact details and images, edit the research notes, and tap Save draft. Preview your draft to review all four sections.</p></div></li><li><div><h3>Review the GitHub changes</h3><p>In Safari, open your BINAIUI repository and the mobile PWA pull request. Review Files changed and the browser checks, then merge when you are ready to publish.</p></div></li><li><div><h3>Upload your content</h3><p>In Studio tap Export content. Save content.json to Files. In Safari, open the repository’s docs folder, choose Add file → Upload files, select your new content.json, and commit the replacement.</p><p>If Safari hides an upload or Settings control, use aA → Request Desktop Website. For a single file you can also use GitHub’s pencil editor in Safari.</p></div></li><li><div><h3>Enable free GitHub Pages</h3><p>Open Settings → Pages. Under Build and deployment, choose Deploy from a branch, select main and /docs, then Save. A public repository is eligible for free Pages.</p></div></li><li><div><h3>Open the published address</h3><p>Wait for GitHub’s Pages deployment to finish. Use the address displayed in Settings → Pages. For this repository it should be <code>https://jdowen88-a11y.github.io/BINAIUI/</code>. That address is expected, not a claim that the site is live.</p></div></li><li><div><h3>Install and check on your iPhone</h3><p>Open the live site in Safari. Share → Add to Home Screen → Add. Launch it from Home Screen, view each section online, then enable Airplane Mode and reopen it to check offline use.</p></div></li></ol><div class="form-section"><h2>Starting in another repository?</h2><p>Download the website ZIP from Studio, save it in Files, and tap it to uncompress. Create a public repository in Safari. Upload the files inside the extracted folder, with index.html at the repository root. Enable Pages from main → / (root). Upload files, not the ZIP itself.</p><p class="help">For later content changes, export and replace content.json in that repository. A custom domain is optional. No API keys or paid backend are required.</p><button class="button" id="download-site" type="button">Download website ZIP</button></div><div class="form-section"><h2>Before you publish</h2><p>Review the sample artwork, add a public contact address if you want people to reach you, check all source links, and review the test results. Physical iPhone installation, Safari image picking, and Home Screen offline launch still need verification on your device after deployment.</p></div></section>';}
 function install(){return '<section class="page guide">'+head('Keep it close','A place on your<br>Home Screen.','BINAIUI is a progressive web app. No App Store required.')+'<div class="install-illustration"><img src="./apple-touch-icon.png" alt="BINAIUI Home Screen icon"><p><strong>BINAIUI</strong><br>One current. Infinite forms.<br>Archive & research, available offline.</p></div><ol class="guide-list"><li><div><h3>Open in Safari</h3><p>Use your published GitHub Pages address in Safari on your iPhone. The development preview may open inside a frame; use the published site for installation.</p></div></li><li><div><h3>Tap Share</h3><p>Tap Safari’s Share button (the square with an arrow pointing up).</p></div></li><li><div><h3>Add to Home Screen</h3><p>Scroll through the Share menu and choose Add to Home Screen. Keep the name BINAIUI, turn on Open as Web App if shown, and tap Add.</p></div></li><li><div><h3>Follow the current offline</h3><p>Launch BINAIUI from Home Screen once while online and wait for “Ready offline” in the footer. The site and local artwork will then work without a connection. External GitHub links still need the internet.</p></div></li></ol><p class="help">On iPhone, installation is a Safari Share menu action. An automatic install prompt is not required.</p><a class="button secondary" href="#publish">Publishing guide ↗</a></section>';}
 function render(){ if(!published)return;
@@ -76,6 +265,15 @@ function readEditor(){const f=$('#studio-form');if(f&&!f.reportValidity())return
 function save(){const next=readEditor();if(!next)return false;draft=next;try{localStorage.setItem(key,JSON.stringify(next));toast('Draft saved on this device. Export a backup to Files.');return true;}catch(e){$('#form-error').textContent='This browser could not save your draft. Your edits are still here. Export content to Files for a backup, or use fewer or smaller images.';return false;}}
 function downloadFile(name,content,type='application/json'){const blob=content instanceof Blob?content:new Blob([content],{type});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}
 function bindStudio(){
+ const batchInput=$('#batch-images');
+ batchInput.onchange=event=>{
+  const files=Array.from(event.target.files||[]);
+  event.target.value='';
+  void importArtworkBatch(files);
+ };
+ $('#cancel-batch').onclick=()=>{batchCancelled=true;const progress=$('#batch-progress');if(progress)progress.textContent='Stopping after the current image…';};
+ $('#export-originals').onclick=()=>{void exportOriginalBackups();};
+ $('[data-download-original]').forEach(button=>button.onclick=()=>{void downloadSavedOriginal(button.dataset.downloadOriginal);});
  $('#studio-form').onsubmit=e=>{e.preventDefault();save();};
  $('#preview-draft').onclick=()=>{const next=readEditor();if(next){draft=next;preview=true;location.hash='home';toast('Local preview for this session. Save or export your draft in Studio.');}};
  $('#export-content').onclick=()=>{const next=readEditor();if(next){draft=next;downloadFile('content.json',JSON.stringify(draft,null,2)+'\n');toast('Content exported. Keep the backup in Files.');}};
@@ -123,7 +321,7 @@ async function setupPWA(){
 $('#viewer .dialog-close').onclick=()=>$('#viewer').close();
 $('#viewer').addEventListener('click',e=>{if(e.target===$('#viewer')){const r=$('#viewer').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('#viewer').close();}});
 $('#exit-draft').onclick=()=>{preview=false;render();};
-window.addEventListener('hashchange',()=>{if(route()==='main'){main.focus();return;}render();});
+window.addEventListener('hashchange',()=>{if(batchBusy&&route()!=='studio')batchCancelled=true;if(route()==='main'){main.focus();return;}render();});
 window.addEventListener('online',connection);window.addEventListener('offline',connection);
 async function boot(){try{const res=await fetch('./content.json',{cache:'no-cache'});if(!res.ok)throw Error('Content could not be loaded.');published=normalize(await res.json());draft=copy(published);try{const stored=localStorage.getItem(key);if(stored)draft=normalize(JSON.parse(stored));}catch{toast('A saved draft could not be loaded. Published content is available.');}render();connection();setupPWA();}catch(e){main.innerHTML='<section class="page"><h1>Reconnect to the current.</h1><p>'+esc(e.message)+'</p><p>Open BINAIUI online once to prepare it for offline use.</p><button class="button" id="retry" type="button">Try again</button></section>';$('#retry').onclick=()=>location.reload();}}
 boot();
