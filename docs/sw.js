@@ -1,6 +1,6 @@
 'use strict';
 const PREFIX = 'binaiui-' + encodeURIComponent(self.registration.scope) + '-';
-const CACHE = PREFIX + '2026-10-05-v4';
+const CACHE = PREFIX + '2026-10-22-v5';
 const ASSETS = ['./','./index.html','./styles.css','./app.js','./content.json','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png','./helix.svg','./prism.svg','./seed.svg','./intersection.svg','./lattice.svg','./current.svg','./README.md','./PUBLICATION-CHECKLIST.md','./TEST-REPORT.md','./sw.js'];
 const CONTENT_PATH = new URL('./content.json', self.registration.scope).pathname;
 self.addEventListener('install', event => {
