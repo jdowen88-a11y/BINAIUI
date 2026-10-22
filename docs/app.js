@@ -86,6 +86,8 @@ async function preserveOriginal(entryId,file){
 }
 async function findOriginal(entryId){
  if(pendingOriginals.has(entryId))return pendingOriginals.get(entryId);
+ const smallBackup=readSmallOriginalBackup(entryId);
+ if(smallBackup)return smallBackup;
  let db;
  try{
   db=await openOriginalsDatabase();
@@ -345,7 +347,9 @@ function bindStudio(){
  $$('[data-remove-project]').forEach(b=>b.onclick=()=>{if(confirm('Remove this project from your local draft?')){draft=collect(false);draft.projects.splice(Number(b.dataset.removeProject),1);render();}});
  $$('[data-upload]').forEach(input=>input.onchange=async()=>{const file=input.files[0];if(!file)return;try{
  if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>12*1024*1024)throw Error('Choose a JPEG, PNG, or WebP image under 12 MB. For HEIC, export a JPEG from Photos first.');
- const url=URL.createObjectURL(file),img=new Image();try{await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(Error('This image could not be opened. Try a JPEG from Photos.'));img.src=url;});const scale=Math.min(1,1200/Math.max(img.naturalWidth,img.naturalHeight));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));canvas.height=Math.max(1,Math.round(img.naturalHeight*scale));const ctx=canvas.getContext('2d');ctx.fillStyle='#edeae4';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);const value=canvas.toDataURL('image/jpeg',.82);const n='a'+input.dataset.upload+'-';$('#studio-form').elements.namedItem(n+'image').value=value;$('#'+n+'thumb').src=value;draft.archive[Number(input.dataset.upload)].sample=false;toast('Image added. Write its alt text, then save your draft.');}finally{URL.revokeObjectURL(url);}
+ const url=URL.createObjectURL(file),img=new Image();try{await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(Error('This image could not be opened. Try a JPEG from Photos.'));img.src=url;});const scale=Math.min(1,1200/Math.max(img.naturalWidth,img.naturalHeight));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));canvas.height=Math.max(1,Math.round(img.naturalHeight*scale));const ctx=canvas.getContext('2d');ctx.fillStyle='#edeae4';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);const value=canvas.toDataURL('image/jpeg',.82);const n='a'+input.dataset.upload+'-';$('#studio-form').elements.namedItem(n+'image').value=value;$('#'+n+'thumb').src=value;draft.archive[Number(input.dataset.upload)].sample=false;
+ const originalKept=await preserveOriginal(draft.archive[Number(input.dataset.upload)].id,file);
+ toast(originalKept?'Image added. Write its alt text, then save your draft.':'Image added, but original storage failed. Save your original separately in Photos or Files.');}finally{URL.revokeObjectURL(url);}
  }catch(e){toast(e.message);input.value='';}});
  $('#import-content').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>25*1024*1024)throw Error('Choose a content file smaller than 25 MB.');const next=normalize(JSON.parse(await file.text()));localStorage.setItem(key,JSON.stringify(next));draft=next;preview=false;render();toast('Content imported as a local draft.');}catch(err){toast('Import failed: '+err.message);}e.target.value='';};
  $('#restore').onclick=()=>{if(confirm('Restore published content? Export a backup first to keep your draft.')){draft=copy(published);preview=false;try{localStorage.removeItem(key);}catch{}render();toast('Published content restored.');}};
