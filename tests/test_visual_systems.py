@@ -23,10 +23,10 @@ def test_all_cassettes_offline():
     assert result["allocated_kw"] == 0
     assert result["assumed_fan_input_w"] == 0
 
-@pytest.mark.parametrize("request", (-1, float("nan"), float("inf")))
-def test_invalid_demand(request):
+@pytest.mark.parametrize("demand", (-1, float("nan"), float("inf")))
+def test_invalid_demand(demand):
     with pytest.raises(ValueError):
-        evaluate(requested_kw=request)
+        evaluate(requested_kw=demand)
 
 def test_duplicate_or_invalid_offline_rejected():
     with pytest.raises(ValueError):
