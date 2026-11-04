@@ -94,3 +94,16 @@ CODE → LIFE → REPRODUCTION → ECOSYSTEM → ∞
 - [`tests/test_core.py`](tests/test_core.py) — reproducibility tests.
 
 The repo is designed so a relation can be loved, used, measured, challenged, reproduced, and extended without deleting what came before.
+
+## November 2026 continuation archive
+
+- [AirX, SEED-000 and GENESIS artwork provenance](archive/2026-11-03/README.md) — recovered studies, design vocabulary, consent-only read-only listener, and visual manifest. The original existing canon remains intact.
+- [AirX nominal study calculations](binaiui/airx.py) and [SEED-000 pure listener](binaiui/carrier_node.py) — additive example implementations with tests.
+- Artwork binaries are in the separate downloadable recovery ZIP delivered in the conversation (created and verified), not in this GitHub branch; [asset statuses are tracked here](archive/2026-11-03/manifest.json).
+
+## GENESIS OPEN FIELD Studio and ten-source expansion
+
+- [Open browser Studio](studio/index.html) — seed-driven glyph-filament canvas, UNKEY, ten selectable systems and image export (no deployment required).
+- [Expansion index and source mappings](archive/2026-11-03/ADDITIONS.md) — ten new original uploads, AirX topologies, safety boundaries and code references.
+- [New image manifest](archive/2026-11-03/full-resolution-references.json) — original JPEG filenames, resolution and binary upload status. The actual images are in the standalone downloadable kit, not committed to GitHub.
+- [Local Carrier Node demo](binaiui/carrier_api.py) — a separate opt-in localhost-only HTTP example; read-only until explicit write opt-in.

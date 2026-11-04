@@ -1,0 +1,121 @@
+{
+  "collection": "BINAIUI / AirX / GENESIS — 2026-11-03",
+  "received_files": [
+    {
+      "name": "IMG_8785.jpeg",
+      "sha256": "7c3f71bdb2e2bdf8fad3c3ebfa9cfd7b75598c875ff013c769e48772e9e4a9fa",
+      "bytes": 411117,
+      "quality": "screenshot"
+    },
+    {
+      "name": "IMG_8786.jpeg",
+      "sha256": "58a8a90226460687d864a2c7bde47bc3e9bd8dd09cc253dd505adf24232fe110",
+      "bytes": 199593,
+      "quality": "screenshot"
+    },
+    {
+      "name": "057DFB68-5D0B-4EDF-A85E-C3F514694B84.jpeg",
+      "sha256": "2f77779e522d63617f088eb6242aa9e448f84f74273908002bbf11ca47af4e11",
+      "bytes": 996302,
+      "quality": "original_uploaded_image",
+      "dimensions": [
+        1536,
+        864
+      ]
+    }
+  ],
+  "artworks": [
+    {
+      "id": "GENESIS-01",
+      "title": "0000 Hz Carrier Node — Project Executed",
+      "source": "IMG_8785.jpeg",
+      "preview_in_companion_zip": "archive/previews/carrier-node-executed.jpg",
+      "quality": "screenshot_crop_only",
+      "github_asset_status": "pending",
+      "original_resolution_available": false
+    },
+    {
+      "id": "GENESIS-02",
+      "title": "0000 Hz Carrier Node — Built and Ready",
+      "source": "IMG_8785.jpeg",
+      "preview_in_companion_zip": "archive/previews/carrier-node-built-ready.jpg",
+      "quality": "screenshot_crop_only",
+      "github_asset_status": "pending",
+      "original_resolution_available": false
+    },
+    {
+      "id": "GENESIS-03",
+      "title": "Open Neural Lattice",
+      "source": "IMG_8785.jpeg",
+      "preview_in_companion_zip": "archive/previews/neural-lattice.jpg",
+      "quality": "screenshot_crop_only",
+      "github_asset_status": "pending",
+      "original_resolution_available": false
+    },
+    {
+      "id": "GENESIS-04",
+      "title": "Violet Lattice Figure",
+      "source": "IMG_8785.jpeg",
+      "preview_in_companion_zip": "archive/previews/violet-lattice-figure.jpg",
+      "quality": "screenshot_crop_only",
+      "github_asset_status": "pending",
+      "original_resolution_available": false
+    },
+    {
+      "id": "GENESIS-05",
+      "title": "Red Wave Cathedral",
+      "source": "IMG_8785.jpeg",
+      "preview_in_companion_zip": "archive/previews/red-wave-cathedral.jpg",
+      "quality": "screenshot_crop_only",
+      "github_asset_status": "pending",
+      "original_resolution_available": false
+    },
+    {
+      "id": "GENESIS-06",
+      "title": "BINAIUI System Plate",
+      "source": "IMG_8785.jpeg",
+      "preview_in_companion_zip": "archive/previews/binaiui-system-plate.jpg",
+      "quality": "screenshot_crop_only",
+      "github_asset_status": "pending",
+      "original_resolution_available": false
+    },
+    {
+      "id": "GENESIS-07",
+      "title": "Violet Temple",
+      "source": "IMG_8785.jpeg",
+      "preview_in_companion_zip": "archive/previews/violet-temple.jpg",
+      "quality": "screenshot_crop_only",
+      "github_asset_status": "pending",
+      "original_resolution_available": false
+    },
+    {
+      "id": "GENESIS-08",
+      "title": "Serpent Conduit",
+      "source": "IMG_8785.jpeg",
+      "preview_in_companion_zip": "archive/previews/serpent-conduit.jpg",
+      "quality": "screenshot_crop_only",
+      "github_asset_status": "pending",
+      "original_resolution_available": false
+    },
+    {
+      "id": "GENESIS-09",
+      "title": "Multi-panel Visual Set",
+      "source": "IMG_8785.jpeg",
+      "preview_in_companion_zip": "archive/previews/multi-panel-visual-set.jpg",
+      "quality": "screenshot_crop_only",
+      "github_asset_status": "pending",
+      "original_resolution_available": false
+    },
+    {
+      "id": "GENESIS-10",
+      "title": "Genesis Open Field — Luminous Code Lattice",
+      "source": "057DFB68-5D0B-4EDF-A85E-C3F514694B84.jpeg",
+      "path_in_companion_zip": "archive/genesis-open-field-original.jpeg",
+      "quality": "uploaded_original",
+      "github_asset_status": "pending",
+      "original_resolution_available": true
+    }
+  ],
+  "duplicate_screen_tile": "The fourth-row multi-panel thumbnail in IMG_8785 is a duplicate of GENESIS-09.",
+  "notes": "These manifest entries describe the user's three received images. No binary image is uploaded in this GitHub PR. Full originals for GENESIS-01 through GENESIS-09 were not available in the current session."
+}
