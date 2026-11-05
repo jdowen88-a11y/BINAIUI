@@ -283,7 +283,7 @@ function render(){ if(!published)return;
  if(!pages[r]){location.hash='home';return;}
  releaseOriginalObjectUrls();
  main.innerHTML=pages[r]();
- if(r==='studio'&&window.BINAIUI_GENESIS){const host=main.querySelector('.studio-layout');if(host){const details=document.createElement('details');details.id='gx-classic';details.className='gx-classic-details';const summary=document.createElement('summary');summary.textContent='Archive editor · draft batch importer · original ZIP backups';details.append(summary);const content=document.createElement('div');content.className='gx-classic-inner';while(host.firstChild)content.append(host.firstChild);details.append(content);host.innerHTML=window.BINAIUI_GENESIS.studioMarkup();host.append(details);}}
+ if(r==='studio'&&window.BINAIUI_GENESIS){const host=main.querySelector('.studio-layout');if(host){const details=document.createElement('details');details.id='gx-classic';details.className='gx-classic-details';details.open=true;const summary=document.createElement('summary');summary.textContent='Archive editor · draft batch importer · original ZIP backups';details.append(summary);const content=document.createElement('div');content.className='gx-classic-inner';while(host.firstChild)content.append(host.firstChild);details.append(content);host.innerHTML=window.BINAIUI_GENESIS.studioMarkup();host.append(details);}}
 
  $$('#draft-banner')[0].hidden=!preview;
  $$('nav a').forEach(a=>{a.removeAttribute('aria-current');if(a.getAttribute('href')==='#'+r)a.setAttribute('aria-current','page');});
