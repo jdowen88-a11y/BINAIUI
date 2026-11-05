@@ -1,0 +1,118 @@
+{
+  "schema": "binaiui-artwork-reference.v1",
+  "created": "2026-11-03",
+  "source": "10 full-resolution user uploads",
+  "github_binary_status": "pending",
+  "companion": "BINAIUI_Genesis_AirX_Recovery_Kit.zip supplied in this chat",
+  "artworks": [
+    {
+      "id": "GENESIS-01",
+      "title": "Genesis Open Field / Cosmic Code Lattice",
+      "filename": "057DFB68-5D0B-4EDF-A85E-C3F514694B84.jpeg",
+      "engine": "genesis_field",
+      "sha256": "2f77779e522d63617f088eb6242aa9e448f84f74273908002bbf11ca47af4e11",
+      "width": 1536,
+      "height": 864,
+      "stored_in_github": false
+    },
+    {
+      "id": "AIRX-01",
+      "title": "Nautilus Multicassette Reactor",
+      "filename": "E4717321-2131-4AE4-B135-3908AD6A888A.jpeg",
+      "engine": "airx_spiral",
+      "sha256": null,
+      "sha256_prefix": "461d7df33d3d",
+      "width": 1536,
+      "height": 1024,
+      "stored_in_github": false
+    },
+    {
+      "id": "AIRX-02",
+      "title": "Dual Nacre Flow Arrays",
+      "filename": "975B03E6-F0C3-4AAB-BED0-F52EA0B9825C.jpeg",
+      "engine": "airx_twin",
+      "sha256": null,
+      "sha256_prefix": "637936d86cd0",
+      "width": 1199,
+      "height": 1312,
+      "stored_in_github": false
+    },
+    {
+      "id": "AIRX-03",
+      "title": "Tri-Fan Exchange Wall",
+      "filename": "A57497ED-04C0-460C-855C-E44385317DC2.jpeg",
+      "engine": "airx_wall",
+      "sha256": null,
+      "sha256_prefix": "08be6b96e550",
+      "width": 1230,
+      "height": 1278,
+      "stored_in_github": false
+    },
+    {
+      "id": "AIRX-04",
+      "title": "Stepped Cascade",
+      "filename": "038D6DF0-FBE7-4B78-90DE-27C880CB3C5F.jpeg",
+      "engine": "airx_cascade",
+      "sha256": null,
+      "sha256_prefix": "49762189012c",
+      "width": 1536,
+      "height": 864,
+      "stored_in_github": false
+    },
+    {
+      "id": "AIRX-05",
+      "title": "Vertical Tower",
+      "filename": "0E42F423-6FFA-44DB-B40D-C54124D81E72.jpeg",
+      "engine": "airx_tower",
+      "sha256": null,
+      "sha256_prefix": "65ee7124d1b6",
+      "width": 1024,
+      "height": 1536,
+      "stored_in_github": false
+    },
+    {
+      "id": "AIRX-06",
+      "title": "Radial Eight-Node Network",
+      "filename": "FE232E86-EA4F-499D-B681-5F4DAB051E7E.jpeg",
+      "engine": "airx_radial",
+      "sha256": null,
+      "sha256_prefix": "410e2847f8bf",
+      "width": 1536,
+      "height": 864,
+      "stored_in_github": false
+    },
+    {
+      "id": "MESH-01",
+      "title": "Crowned Trident Mesh",
+      "filename": "77A4F195-D8C6-4DC3-9830-56C96C6FF56B.jpeg",
+      "engine": "crowned_mesh",
+      "sha256": null,
+      "sha256_prefix": "dd26237e371f",
+      "width": 1254,
+      "height": 1254,
+      "stored_in_github": false
+    },
+    {
+      "id": "CARRIER-01",
+      "title": "0000 Hz Carrier Node Interface Study",
+      "filename": "30A30764-98B9-4325-8746-CDB014F8AB97.jpeg",
+      "engine": "carrier_api",
+      "sha256": null,
+      "sha256_prefix": "ff0687de2a61",
+      "width": 1536,
+      "height": 1024,
+      "stored_in_github": false
+    },
+    {
+      "id": "UNKEY-01",
+      "title": "UNKEY Recursive Key Release",
+      "filename": "3069B0D2-CA38-4F19-A2A8-6FAFB7C172B3.jpeg",
+      "engine": "unkey_field",
+      "sha256": null,
+      "sha256_prefix": "3713a008cd90",
+      "width": 1254,
+      "height": 1254,
+      "stored_in_github": false
+    }
+  ]
+}
