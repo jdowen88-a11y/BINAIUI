@@ -1,3 +1,9 @@
+# Unified GENESIS Studio integration (review only)
+
+This branch preserves the entire mobile editing and **draft** batch-import workflow and adds a full-bleed procedural field, reference registry, AirX explorer, UNKEY, local backup status and a GitHub branch roadmap. See [UNIFIED-STUDIO.md](UNIFIED-STUDIO.md) for exact sources, integrity protections, mobile usage, test checklist and publication prerequisites. The site is not merged or deployed by this change.
+
+---
+
 # BINAIUI public app
 
 A mobile-first static progressive web app. Plain HTML, CSS, JavaScript, and JSON.
