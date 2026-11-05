@@ -17,6 +17,7 @@ for (const prefix of ['/', '/BINAIUI/']) {
       await page.goto(prefix+'#studio');
       const canvas=page.locator('#gx-canvas');
       await expect(canvas).toBeVisible();
+      await expect.poll(async ()=>canvas.evaluate(el=>el.getContext('2d').getImageData(0,0,1,1).data[3])).toBe(255);
       const info=await canvas.evaluate(el => {
         const data=el.getContext('2d').getImageData(0,0,el.width,el.height).data;
         return {width:el.width,height:el.height,opaque:data[3]===255,png:el.toDataURL('image/png').startsWith('data:image/png;base64,')};
