@@ -2,6 +2,32 @@ const { test, expect } = require('@playwright/test');
 
 for (const prefix of ['/', '/BINAIUI/']) {
   test.describe('Unified GENESIS Studio at '+prefix, () => {
+    test('all six phone navigation links remain visible and usable', async ({ page }) => {
+      const routes = [
+        ['Home', 'home'], ['Studio', 'studio'], ['Archive', 'archive'],
+        ['Roadmap', 'roadmap'], ['Projects', 'projects'], ['About', 'about']
+      ];
+      for (const width of [320, 390]) {
+        await page.setViewportSize({ width, height: 844 });
+        await page.goto(prefix);
+        const nav = page.getByRole('navigation', { name: 'Mobile navigation' });
+        await expect(nav.getByRole('link')).toHaveCount(routes.length);
+        for (const [name, hash] of routes) {
+          const link = nav.getByRole('link', { name, exact: true });
+          await expect(link).toBeVisible();
+          const bounds = await link.boundingBox();
+          expect(bounds.x).toBeGreaterThanOrEqual(0);
+          expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
+          expect(bounds.width).toBeGreaterThanOrEqual(44);
+          expect(bounds.height).toBeGreaterThanOrEqual(44);
+          await link.click();
+          await expect(page).toHaveURL(new RegExp('#' + hash + '$'));
+          await expect(link).toHaveAttribute('aria-current', 'page');
+          await expect(page.locator('#main').getByRole('heading').first()).toBeVisible();
+        }
+      }
+    });
+
     test('dashboard and separate PR statuses are honest', async ({ page }) => {
       await page.goto(prefix+'#home');
       await expect(page.getByRole('heading', { name: 'The living GENESIS workspace' })).toBeVisible();
