@@ -1,10 +1,12 @@
-# BINAIUI Unified GENESIS Studio — integration review
+# BINAIUI Unified GENESIS Studio — integration release
 
-**Status: review branch only; not merged, deployed, or an authenticated CMS.**
+**Current code status (November 13, 2026): merged into `main` through [PR #5](https://github.com/jdowen88-a11y/BINAIUI/pull/5); not deployed through GitHub Pages and not an authenticated CMS. Original artwork binaries and physical iPhone acceptance remain outstanding in [issue #6](https://github.com/jdowen88-a11y/BINAIUI/issues/6).**
 
 This integration retains the mobile-first website and existing local content editor from PR #1, preserves the separate draft batch importer and original-file backups from PR #2, and adapts the procedural field, AirX reference systems, and UNKEY concepts described in PR #3 into a single `#studio` route.
 
-## GitHub branch lineage (snapshot: 2026-11-04)
+## GitHub branch lineage (historical snapshot: 2026-11-04)
+
+The table records the unmerged state on November 4. PRs #1–#5 have since merged through their documented dependency branches, culminating in `main` commit `de747007d275d0c63c5bfa0a008326139a7c726d`. The source branches and original commits were retained.
 
 | Work | Source | Relationship | State at snapshot |
 | --- | --- | --- | --- |
@@ -13,7 +15,7 @@ This integration retains the mobile-first website and existing local content edi
 | GENESIS, AirX, SEED-000 and Python modules | [PR #3](https://github.com/jdowen88-a11y/BINAIUI/pull/3) | `archive/airx-seed000-genesis-20261103` → `main` | Open, unmerged |
 | Unified Studio shell and integration | `feature/unified-genesis-studio` | Branched from PR #2 head; adapted select frontend ideas from PR #3 | Review-only proposal |
 
-**No base branches, existing pull requests, or original source files are overwritten by this proposal.** PR #3's Python modules and tests remain separate, not silently merged into this site.
+**Historical note:** This was originally a review-only proposal. PR #3's source modules were subsequently integrated through PR #5 and verified by the expanded Python suite; the original archive and development history remain available.
 
 ## One mobile workspace
 

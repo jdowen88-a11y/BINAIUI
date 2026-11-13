@@ -1,7 +1,8 @@
-# Before BINAIUI is public
+# BINAIUI public website publication checklist
 
-Required deployment steps:
-- Review pull request #1 and its passed browser checks; merge when ready.
+Required deployment steps (site deployment has not been confirmed):
+- [x] Merge reviewed core, PWA, importer, archive, and integrated GENESIS code into `main` through [PR #5](https://github.com/jdowen88-a11y/BINAIUI/pull/5).
+- [ ] Independently verify the final `main` CI browser, Python, and integration checks before publication.
 - GitHub Settings → Pages → Deploy from a branch → main → /docs → Save.
 - Wait for a successful Pages deployment and use the URL GitHub displays.
 - On the published HTTPS address, test on your physical iPhone:

@@ -156,5 +156,15 @@
       "visibility": "public",
       "integration": "host-local-tests"
     }
-  ]
+  ],
+  "release_status": {
+    "code_integrated_to_main": true,
+    "merge_commit": "de747007d275d0c63c5bfa0a008326139a7c726d",
+    "publish_status": "not_verified",
+    "physical_iphone_verified": false,
+    "original_images_in_github": 0,
+    "original_images_catalogued": 10,
+    "open_acceptance_issue": 6,
+    "note": "Original policy flags describe the review-only integration phase; this release section records the subsequent manually approved code merge. No live deployment or trades are authorized."
+  }
 }
