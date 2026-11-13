@@ -32,10 +32,14 @@ Passing checks on the final integration branch:
 2. **Physical device acceptance.** iPhone Safari Photos/Files picker, original-file recovery, local ZIP backups, PNG export, service-worker update, and Add to Home Screen / offline reopen have not been personally verified on physical hardware.
 3. **Public deployment.** GitHub Pages `main/docs` has not been confirmed configured or live. Source in a public GitHub repository is already readable/cloneable by third parties; a source-code merge is not an access-control mechanism. Review public copy and contact before enabling Pages.
 4. **Archive capacity.** Current importer supports up to 60 entries, 12 MB per image, with a 120 MB originals ZIP cap. It is not a full large-scale media preservation system.
-5. **Legacy Project Unknown refactor.** [PR #1](https://github.com/jdowen88-a11y/project-unknown/pull/1) remains draft and has unresolved behavior tests (27 passing, two failing) and a major divergence from modern `main`. The review branch is preserved and should not be force-merged. See its PR comments.
+5. **Legacy Project Unknown refactor.** [PR #1](https://github.com/jdowen88-a11y/project-unknown/pull/1) remains draft and is not automatically mergeable with modern `main`. Its preserved legacy branch now passes [30 offline tests](https://github.com/jdowen88-a11y/project-unknown/actions/runs/43523356759), but it is 32 commits behind `main` and cannot safely replace the newer engine without a separately reviewed forward-port. The review branch is preserved and should not be force-merged. See its PR comments.
 6. **Coverage scope.** The workspace inventory counts 23 repositories, but the public integration runs only a selected set of pinned, offline tests. It neither accesses the thirteen private repositories nor establishes all projects, services, or dependencies as bug-free. No external trades, deployments or devices are exercised.
 
 [Release acceptance and original-artwork recovery issue #6](https://github.com/jdowen88-a11y/BINAIUI/issues/6) is the authoritative checklist for unresolved material.
+
+## Maintained CI and machine-readable release status
+
+The final verification PR upgrades GitHub Actions dependencies and keeps Ubuntu 24.04 for reproducible browser tests. `WORKSPACE.json` now records the manual code merge separately from historical review-only policy flags; its validator enforces explicit outstanding statuses instead of silently claiming publication. The ten-file canonical artwork catalog is mirrored byte-for-byte and protected by an asset-integrity test that requires an actual file and SHA-256 before any `stored_in_github: true` record is accepted.
 
 ## Verification principle
 
