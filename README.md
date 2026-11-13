@@ -107,3 +107,12 @@ The repo is designed so a relation can be loved, used, measured, challenged, rep
 - [Expansion index and source mappings](archive/2026-11-03/ADDITIONS.md) — ten new original uploads, AirX topologies, safety boundaries and code references.
 - [New image manifest](archive/2026-11-03/full-resolution-references.json) — original JPEG filenames, resolution and binary upload status. The actual images are in the standalone downloadable kit, not committed to GitHub.
 - [Local Carrier Node demo](binaiui/carrier_api.py) — a separate opt-in localhost-only HTTP example; read-only until explicit write opt-in.
+
+## Integrated GENESIS mobile workspace (2026-11-13)
+
+- [Unified phone-first Studio](docs/UNIFIED-STUDIO.md) — responsive web workspace with the original mobile PWA, local draft editor, protected multi-artwork importer, GENESIS open-field generator, AirX references, UNKEY, PNG export, local artwork backup and roadmap.
+- [Integration audit and release boundaries](WORKSPACE-INTEGRATION.md) — what was combined, exact test scope, recovery history, outstanding real-device tests, and explicit no-live-trading / no-hardware controls.
+- [Repository inventory](WORKSPACE.json) — 23 repository records; private sources are intentionally anonymized in this public manifest rather than copied.
+- [Automated integration checks](.github/workflows/integration-checks.yml) — offline tests on the integrated branch and default branch; test success does not prove absent artwork has been restored or hardware and production systems have been validated.
+
+Source PRs and branches are preserved in GitHub history; no unpublished image binary is silently replaced by a generated interpretation. Publishing the public web app does not publish or install any missing original images.
