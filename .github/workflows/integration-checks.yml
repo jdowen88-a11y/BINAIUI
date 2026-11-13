@@ -10,8 +10,8 @@ jobs:
   integrated-python:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - run: python -m pip install pytest
@@ -32,11 +32,11 @@ jobs:
           - project: project-unknown
             ref: 95f8ce7f56fc80c40f2500deb73e51c1b834630b
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: jdowen88-a11y/${{ matrix.project }}
           ref: ${{ matrix.ref }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
       - name: Run committed Node test suite without installs
@@ -44,11 +44,11 @@ jobs:
   offline-python-runtime:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: jdowen88-a11y/dual-cognition-agent
           ref: 5598e55b1ea4c73605f1c2a3675055705d53e5f5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - run: python -m pip install -e '.[test]'
@@ -57,11 +57,11 @@ jobs:
   offline-typescript-pump:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: jdowen88-a11y/pump
           ref: e8b9ddb13ccd29ba3f8ab0880fe0a2709e1eaaf5
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
       - name: Install code dependencies (disable install scripts)
