@@ -40,7 +40,24 @@ def validate() -> dict:
             raise ValueError(f"Policy must preserve {required}")
     for required in ("deploy", "merge_main", "live_trading"):
         if p.get(required) is not False:
-            raise ValueError(f"Policy must disable {required}")
+            raise ValueError(f"Historical review policy must disable {required}")
+    release = doc.get("release_status")
+    if release is not None:
+        if release.get("code_integrated_to_main") is not True:
+            raise ValueError("Code release flag must be explicit")
+        if not isinstance(release.get("merge_commit"), str) or len(release["merge_commit"]) != 40:
+            raise ValueError("Missing 40-character merged commit SHA")
+        if release.get("publish_status") not in ("not_verified", "verified"):
+            raise ValueError("Invalid publication verification status")
+        if not isinstance(release.get("physical_iphone_verified"), bool):
+            raise ValueError("Physical device status must be explicit")
+        if release.get("original_images_catalogued") != 10:
+            raise ValueError("Original catalog count must be explicit")
+        preserved = release.get("original_images_in_github")
+        if not isinstance(preserved, int) or not 0 <= preserved <= 10:
+            raise ValueError("Invalid count of preserved originals")
+        if release.get("open_acceptance_issue") != 6:
+            raise ValueError("Missing release acceptance issue #6")
     return {"count": len(records), "offline_checks": sum(r["integration"] == "offline-reference-check" for r in records)}
 
 if __name__ == "__main__":
