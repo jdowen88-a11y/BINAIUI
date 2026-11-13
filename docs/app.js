@@ -8,6 +8,235 @@ const key = 'binaiui-draft:' + location.pathname;
 const safeLink = s => { try { const u=new URL(s); return u.protocol === 'https:' ? u.href : ''; } catch { return ''; } };
 const safeImage = s => /^\.\/(helix|prism|seed|intersection|lattice|current)\.svg$/i.test(s) || /^data:image\/(jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(s);
 const id = () => 'entry-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now()+'-'+Math.random().toString(36).slice(2));
+
+const ORIGINALS_DATABASE='binaiui-artwork-originals-v1';
+const originalBackupKey=entryId=>'binaiui-original:'+location.pathname+':'+entryId;
+const SMALL_ORIGINAL_BACKUP_LIMIT=256*1024;
+function fileAsDataURL(blob){
+ return new Promise((resolve,reject)=>{
+  const reader=new FileReader();
+  reader.onload=()=>resolve(reader.result);
+  reader.onerror=()=>reject(reader.error||Error('Original could not be read.'));
+  reader.readAsDataURL(blob);
+ });
+}
+async function backupSmallOriginal(record){
+ if(record.size>SMALL_ORIGINAL_BACKUP_LIMIT)return false;
+ try{
+  const dataURL=await fileAsDataURL(record.blob);
+  if(!/^data:image\/(jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(dataURL))return false;
+  localStorage.setItem(originalBackupKey(record.id),JSON.stringify({
+   name:record.name,type:record.type,size:record.size,lastModified:record.lastModified,dataURL
+  }));
+  return true;
+ }catch{return false;}
+}
+function readSmallOriginalBackup(entryId){
+ try{
+  const raw=localStorage.getItem(originalBackupKey(entryId));
+  if(!raw)return null;
+  const stored=JSON.parse(raw),match=/^data:image\/(jpeg|png|webp);base64,([a-z0-9+/=]+)$/i.exec(stored.dataURL);
+  if(!match||!Number.isSafeInteger(stored.size)||stored.size>SMALL_ORIGINAL_BACKUP_LIMIT)return null;
+  const binary=atob(match[2]),bytes=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+  if(bytes.length!==stored.size)return null;
+  return {id:entryId,name:stored.name,type:stored.type,size:stored.size,
+   lastModified:stored.lastModified,blob:new Blob([bytes],{type:stored.type})};
+ }catch{return null;}
+}
+const pendingOriginals=new Map();
+const originalObjectUrls=new Set();
+function releaseOriginalObjectUrls(){for(const url of originalObjectUrls)URL.revokeObjectURL(url);originalObjectUrls.clear();}
+let batchBusy=false, batchCancelled=false, batchFeedback=null;
+
+function openOriginalsDatabase(){
+ return new Promise((resolve,reject)=>{
+  if(!window.indexedDB){reject(Error('Original storage is unavailable.'));return;}
+  let request;
+  try{request=indexedDB.open(ORIGINALS_DATABASE,1);}catch(error){reject(error);return;}
+  request.onupgradeneeded=()=>{
+   if(!request.result.objectStoreNames.contains('files'))request.result.createObjectStore('files',{keyPath:'id'});
+  };
+  request.onsuccess=()=>resolve(request.result);
+  request.onerror=()=>reject(request.error||Error('Original storage failed.'));
+  request.onblocked=()=>reject(Error('Original storage is blocked.'));
+ });
+}
+async function preserveOriginal(entryId,file){
+ const record={id:entryId,name:file.name,type:file.type,size:file.size,lastModified:file.lastModified,
+  blob:new Blob([file],{type:file.type})};
+ // A small separate backup helps recover files on Safari if IndexedDB cannot reload.
+ const hasSmallBackup=await backupSmallOriginal(record);
+ let db;
+ try{
+  db=await openOriginalsDatabase();
+  await new Promise((resolve,reject)=>{
+   const transaction=db.transaction('files','readwrite');
+   transaction.objectStore('files').put(record);
+   transaction.oncomplete=()=>resolve();
+   transaction.onerror=()=>reject(transaction.error||Error('Original storage failed.'));
+   transaction.onabort=()=>reject(transaction.error||Error('Original storage was interrupted.'));
+  });
+  pendingOriginals.delete(entryId);
+  return true;
+ }catch{
+  if(!hasSmallBackup)pendingOriginals.set(entryId,record);
+  return hasSmallBackup;
+ }finally{if(db)db.close();}
+}
+async function findOriginal(entryId){
+ if(pendingOriginals.has(entryId))return pendingOriginals.get(entryId);
+ const smallBackup=readSmallOriginalBackup(entryId);
+ if(smallBackup)return smallBackup;
+ let db;
+ try{
+  db=await openOriginalsDatabase();
+  const stored=await new Promise((resolve,reject)=>{
+   const transaction=db.transaction('files','readonly');
+   const request=transaction.objectStore('files').get(entryId);
+   request.onsuccess=()=>resolve(request.result||null);
+   request.onerror=()=>reject(request.error||Error('Original could not be read.'));
+   transaction.onabort=()=>reject(transaction.error||Error('Original read was interrupted.'));
+  });
+  if(stored?.blob?.size)return stored;
+ }catch{
+  // IndexedDB can be unavailable or evicted on mobile browsers.
+ }finally{if(db)db.close();}
+ return readSmallOriginalBackup(entryId);
+}
+async function resizeBatchImage(file){
+ if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size===0||file.size>12*1024*1024){
+  throw Error('Choose a JPEG, PNG, or WebP image up to 12 MB. Export HEIC as JPEG first.');
+ }
+ const url=URL.createObjectURL(file),image=new Image();
+ try{
+  await new Promise((resolve,reject)=>{
+   image.onload=resolve;
+   image.onerror=()=>reject(Error('Image could not be decoded.'));
+   image.src=url;
+  });
+  if(!image.naturalWidth||!image.naturalHeight)throw Error('Image has no usable dimensions.');
+  const scale=Math.min(1,1200/Math.max(image.naturalWidth,image.naturalHeight));
+  const canvas=document.createElement('canvas');
+  canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));
+  canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));
+  const context=canvas.getContext('2d');
+  if(!context)throw Error('Image processing is unavailable on this device.');
+  context.fillStyle='#edeae4';
+  context.fillRect(0,0,canvas.width,canvas.height);
+  context.drawImage(image,0,0,canvas.width,canvas.height);
+  const resized=canvas.toDataURL('image/jpeg',.82);
+  if(resized.length>3000000||!safeImage(resized))throw Error('Resized image exceeds the content-file limit.');
+  return resized;
+ }finally{URL.revokeObjectURL(url);}
+}
+function importedTitle(filename,entries){
+ const base=filename.replace(/\.[^.]+$/,'').replace(/[_]+/g,' ').replace(/[\u0000-\u001f\u007f]/g,'').trim().slice(0,100)||'Untitled artwork';
+ let title=base,serial=2;
+ while(entries.some(entry=>entry.title.toLowerCase()===title.toLowerCase())){
+  const suffix=' ('+serial+++')';
+  title=base.slice(0,100-suffix.length)+suffix;
+ }
+ return title;
+}
+function freshArtworkId(){
+ const used=new Set([...draft.archive,...draft.projects].map(entry=>entry.id));
+ let candidate=id();
+ while(used.has(candidate))candidate=id();
+ return candidate;
+}
+function batchControls(){
+ const feedback=batchFeedback;
+ const errors=feedback&&feedback.errors.length?'<ul>'+feedback.errors.slice(0,8).map(error=>'<li>'+esc(error)+'</li>').join('')+'</ul>':'';
+ const more=feedback&&feedback.errors.length>8?'<p class="help">'+(feedback.errors.length-8)+' more files were skipped.</p>':'';
+ const summary=feedback?'<div class="notice" id="batch-results" role="status"><p>'+esc(feedback.summary)+'</p>'+(feedback.warning?'<p>'+esc(feedback.warning)+'</p>':'')+errors+more+'</div>':'';
+ return '<div class="field"><label for="batch-images">Add multiple artworks from Photos or Files</label><input id="batch-images" type="file" accept="image/jpeg,image/png,image/webp" multiple '+(batchBusy?'disabled':'')+'></div><p class="help">Select multiple JPEG, PNG or WebP images. Each becomes a separate editable artwork. Titles, descriptions and captions are starting points: review them before export. Originals are kept separately in this browser when storage permits.</p><p id="batch-progress" role="status" aria-live="polite"></p><button id="cancel-batch" type="button" class="button secondary" '+(batchBusy?'':'hidden')+'>Cancel import</button><button id="export-originals" type="button" class="button secondary">Download originals backup ZIP</button><p class="help">Originals are not included in content.json or the website ZIP. Back them up separately; local browser files can be cleared.</p>'+summary;
+}
+async function importArtworkBatch(files){
+ if(batchBusy||!files.length)return;
+ batchBusy=true;
+ batchCancelled=false;
+ batchFeedback=null;
+ draft=collect(false);
+ const firstIndex=draft.archive.length;
+ const controls=$$('#studio-form input, #studio-form select, #studio-form textarea, #studio-form button');
+ controls.forEach(control=>{if(control.id!=='cancel-batch')control.disabled=true;});
+ $('#cancel-batch').hidden=false;
+ const progress=message=>{const el=$('#batch-progress');if(el)el.textContent=message;};
+ let imported=0,originalsInMemory=0,checkpointFailed=false;
+ const errors=[];
+ try{
+  for(let index=0;index<files.length;index++){
+   if(batchCancelled)break;
+   const file=files[index];
+   progress('Processing '+(index+1)+' of '+files.length+': '+file.name);
+   if(draft.archive.length>=60){errors.push(file.name+': archive limit of 60 reached.');continue;}
+   try{
+    const resized=await resizeBatchImage(file);
+    if(batchCancelled)break;
+    const title=importedTitle(file.name,draft.archive);
+    const entryId=freshArtworkId();
+    draft.archive.push({id:entryId,title,category:'Organic',image:resized,
+     alt:'Artwork titled '+title+'. Review this description for accessibility.',
+     caption:'Imported artwork. Review and replace this caption.',
+     date:'',featured:false,sample:false});
+    if(!await preserveOriginal(entryId,file))originalsInMemory++;
+    try{localStorage.setItem(key,JSON.stringify(normalize(draft)));}
+    catch{checkpointFailed=true;}
+    imported++;
+   }catch(error){errors.push(file.name+': '+error.message);}
+  }
+ }finally{
+  const cancelled=batchCancelled;
+  batchBusy=false;
+  batchCancelled=false;
+  const warnings=[];
+  if(checkpointFailed)warnings.push('Draft storage failed or some fields are unfinished. Artwork remains in this tab; export content before leaving.');
+  if(originalsInMemory)warnings.push(originalsInMemory+' original(s) could not be stored. They remain only in this open tab; download an originals backup before leaving.');
+  batchFeedback={
+   summary:'Imported '+imported+' of '+files.length+' file(s). '+errors.length+' skipped.'+(cancelled?' Import cancelled; completed artworks were kept.':''),
+   warning:warnings.join(' '),errors
+  };
+  if(route()==='studio'){
+   render();
+   if(imported){
+    const first=$$('.editor-entry')[firstIndex];
+    if(first){first.open=true;first.scrollIntoView({block:'nearest'});}
+   }
+  }
+  toast('Batch import: '+imported+' added, '+errors.length+' skipped.'+(warnings.length?' Backup warning.':''));
+ }
+}
+async function exportOriginalBackups(){
+ const button=$('#export-originals');
+ if(!button)return;
+ button.disabled=true;
+ const old=button.textContent;
+ button.textContent='Preparing original backups…';
+ try{
+  const selected=[],missing=[];
+  let totalSize=0;
+  for(const entry of draft.archive){
+   const original=await findOriginal(entry.id);
+   if(!original){if(!entry.sample&&/^data:image\//.test(entry.image))missing.push(entry.title);continue;}
+   totalSize+=original.blob.size;
+   if(totalSize>120*1024*1024)throw Error('Originals exceed 120 MB. Use Download original for individual entries instead.');
+   selected.push({entry,original});
+  }
+  if(!selected.length)throw Error('No imported originals have been saved in this browser.');
+  const encoder=new TextEncoder();
+  const manifest=selected.map(({entry,original})=>({id:entry.id,title:entry.title,filename:original.name,type:original.type,size:original.size}));
+  const files=[['originals/manifest.json',encoder.encode(JSON.stringify({version:1,artworks:manifest},null,2)+'\n')]];
+  for(const {entry,original} of selected){
+   const filename=(original.name.replace(/[^a-z0-9._-]+/gi,'-').replace(/^\.+/,'').slice(0,80)||'image');
+   files.push(['originals/'+entry.id+'-'+filename,new Uint8Array(await original.blob.arrayBuffer())]);
+  }
+  downloadFile('BINAIUI-originals.zip',zip(files),'application/zip');
+  toast('Originals backup ready: '+selected.length+' file(s).'+(missing.length?' Some uploaded entries have no saved original.':''));
+ }catch(error){toast('Original backup: '+error.message);}
+ finally{button.disabled=false;button.textContent=old;}
+}
+
 let published, draft, preview=false, archiveFilter='All', projectFilter='All', search='', lastRoute='', waitingWorker, toastTimer;
 const main=$('#main');
 const route = () => location.hash.slice(1) || 'home';
@@ -36,7 +265,7 @@ function head(label,title,description,note='') {return '<div class="page-head"><
 function art(v){return '<button class="art-card" data-open="'+esc(v.id)+'" aria-label="Open '+esc(v.title)+'"><img src="'+esc(v.image)+'" alt="'+esc(v.alt)+'" loading="lazy" width="640" height="800"><div class="art-caption"><h3>'+esc(v.title)+'</h3><span>'+esc(v.category)+'</span></div></button>';}
 function status(v){return '<span class="status '+(v==='Concept'?'concept':'')+'">'+esc(v)+'</span>';}
 function filterMarkup(values,active,name){return '<div class="filters" aria-label="'+esc(name)+'">'+values.map(v=>'<button class="chip" data-filter="'+esc(v)+'" aria-pressed="'+(v===active)+'">'+esc(v)+'</button>').join('')+'</div>';}
-function home(){const d=data(), selected=d.archive.filter(v=>v.featured).slice(0,3);return '<section class="page"><div class="hero"><div><p class="eyebrow"><span class="dot"></span>Biological / Artificial / Connected</p><h1>One current.<br><em>Infinite forms.</em></h1></div><div><p class="hero-intro">'+esc(d.site.introduction)+'</p><div class="actions"><a class="button" href="#archive">Explore the archive <span aria-hidden="true">↗</span></a><a class="text-link" href="#projects">Follow the research <span aria-hidden="true">→</span></a></div></div></div><div class="intro-line"><p class="eyebrow">Selected visual studies</p><a class="text-link" href="#archive">View all <span aria-hidden="true">↗</span></a></div><div class="visual-grid">'+selected.map(art).join('')+'</div>'+(selected.some(v=>v.sample)?'<p class="sample-note">Original sample artwork inspired by the BINAIUI canon. Replace or extend it in Studio.</p>':'')+'<div class="home-research"><div><p class="eyebrow">Ideas in motion</p><h2>A notebook,<br>still unfolding.</h2><p>Observe. Connect. Test. Continue. Research drawn from the existing BINAIUI canon.</p></div><div>'+d.projects.slice(0,3).map(v=>'<a class="research-line" href="#projects"><div><h3>'+esc(v.title)+'</h3><p>'+esc(v.summary)+'</p></div><span class="arrow" aria-hidden="true">↗</span></a>').join('')+'</div></div><div class="closing"><p>“A new relationship at every scale.”</p><span>BI • AI • V → X → C → ∞</span></div></section>';}
+function home(){const overview=window.BINAIUI_GENESIS?.dashboard()||'';const d=data(), selected=d.archive.filter(v=>v.featured).slice(0,3);return overview+'<section class="page"><div class="hero"><div><p class="eyebrow"><span class="dot"></span>Biological / Artificial / Connected</p><h1>One current.<br><em>Infinite forms.</em></h1></div><div><p class="hero-intro">'+esc(d.site.introduction)+'</p><div class="actions"><a class="button" href="#archive">Explore the archive <span aria-hidden="true">↗</span></a><a class="text-link" href="#projects">Follow the research <span aria-hidden="true">→</span></a></div></div></div><div class="intro-line"><p class="eyebrow">Selected visual studies</p><a class="text-link" href="#archive">View all <span aria-hidden="true">↗</span></a></div><div class="visual-grid">'+selected.map(art).join('')+'</div>'+(selected.some(v=>v.sample)?'<p class="sample-note">Original sample artwork inspired by the BINAIUI canon. Replace or extend it in Studio.</p>':'')+'<div class="home-research"><div><p class="eyebrow">Ideas in motion</p><h2>A notebook,<br>still unfolding.</h2><p>Observe. Connect. Test. Continue. Research drawn from the existing BINAIUI canon.</p></div><div>'+d.projects.slice(0,3).map(v=>'<a class="research-line" href="#projects"><div><h3>'+esc(v.title)+'</h3><p>'+esc(v.summary)+'</p></div><span class="arrow" aria-hidden="true">↗</span></a>').join('')+'</div></div><div class="closing"><p>“A new relationship at every scale.”</p><span>BI • AI • V → X → C → ∞</span></div></section>';}
 function archive(){return '<section class="page">'+head('The visual archive','Forms of connection.','A collection of images, variations, and small acts of observation.',data().archive.length+' studies. One continuing current.')+'<div class="toolbar">'+filterMarkup(['All','Geometry','Organic','Systems'],archiveFilter,'Archive categories')+'<div class="search-wrap"><label class="sr-only" for="archive-search">Search archive</label><input id="archive-search" type="search" placeholder="Search the archive…" value="'+esc(search)+'" autocomplete="off"><span aria-hidden="true">⌕</span></div></div><p class="result-count" id="archive-count" aria-live="polite"></p><div class="archive-grid" id="archive-grid"></div>'+(data().archive.some(v=>v.sample)?'<p class="sample-note">The starter studies are original sample artwork inspired by the canon.</p>':'')+'</section>';}
 function archiveResults(){const list=data().archive.filter(v=>(archiveFilter==='All'||v.category===archiveFilter)&&[v.title,v.caption,v.category].join(' ').toLowerCase().includes(search.toLowerCase()));$('#archive-grid').innerHTML=list.length?list.map(art).join(''):'<p class="empty">No images found. Try another search or category.</p>';$('#archive-count').textContent=list.length+' '+(list.length===1?'study':'studies');bindArtwork();}
 function projects(){const list=data().projects.filter(v=>projectFilter==='All'||v.status===projectFilter);return '<section class="page">'+head('Projects & research','Ideas in motion.','Concepts, prototypes, and questions that carry the current forward.','Grounded in the public canon. Open to measurement and challenge.')+'<div class="toolbar">'+filterMarkup(['All','Prototype','Concept'],projectFilter,'Project status')+'</div><div class="project-list">'+list.map(v=>'<details class="project"><summary><div><h2>'+esc(v.title)+'</h2>'+status(v.status)+'</div><p>'+esc(v.summary)+'</p><span class="plus" aria-hidden="true">+</span></summary><div class="project-notes"><p>'+esc(v.notes)+'</p>'+(v.url?'<a class="text-link" href="'+esc(safeLink(v.url))+'" target="_blank" rel="noopener noreferrer">Read the source <span aria-hidden="true">↗</span></a>':'')+'</div></details>').join('')+'</div><p class="sample-note">Conceptual relations describe identity or convergence. Standard arithmetic remains standard arithmetic. No empirical results are implied.</p></section>';}
@@ -44,22 +273,25 @@ function about(){const s=data().site;return '<section class="page">'+head('About
 const field=(label,name,value,type='text',max=500,required=false)=>'<div class="field"><label for="'+name+'">'+esc(label)+'</label><input id="'+name+'" name="'+name+'" type="'+type+'" value="'+esc(value)+'" maxlength="'+max+'" '+(required?'required':'')+'></div>';
 const area=(label,name,value,max=3000)=>'<div class="field"><label for="'+name+'">'+esc(label)+'</label><textarea id="'+name+'" name="'+name+'" maxlength="'+max+'" required>'+esc(value)+'</textarea></div>';
 function select(label,name,value,opts){return '<div class="field"><label for="'+name+'">'+label+'</label><select id="'+name+'" name="'+name+'">'+opts.map(o=>'<option '+(o===value?'selected':'')+'>'+o+'</option>').join('')+'</select></div>';}
-function archiveEditor(v,i){const n='a'+i+'-';return '<details class="editor-entry"><summary>'+esc(v.title||'New image')+'</summary><div>'+field('Image title',n+'title',v.title,'text',100,true)+'<div class="form-grid">'+select('Category',n+'category',v.category,['Geometry','Organic','Systems'])+field('Date or period',n+'date',v.date,'text',30)+'</div>'+area('Image description (alt text)',n+'alt',v.alt,500)+area('Caption',n+'caption',v.caption)+'<img class="editor-image" id="'+n+'thumb" src="'+esc(v.image)+'" alt=""><input type="hidden" name="'+n+'image" value="'+esc(v.image)+'"><div class="field"><label for="'+n+'upload">Choose image from Photos or Files</label><input id="'+n+'upload" type="file" accept="image/jpeg,image/png,image/webp" data-upload="'+i+'"></div><p class="help">JPEG, PNG, or WebP, up to 12 MB. Resized to 1200 px and embedded in your content file. No image-hosting account needed.</p><label class="help"><input type="checkbox" name="'+n+'featured" '+(v.featured?'checked':'')+'> Feature this image on Home</label><br><button class="danger" type="button" data-remove-archive="'+i+'">Remove '+esc(v.title||'image')+'</button></div></details>';}
+function archiveEditor(v,i){const n='a'+i+'-';return '<details class="editor-entry"><summary>'+esc(v.title||'New image')+'</summary><div>'+field('Image title',n+'title',v.title,'text',100,true)+'<div class="form-grid">'+select('Category',n+'category',v.category,['Geometry','Organic','Systems'])+field('Date or period',n+'date',v.date,'text',30)+'</div>'+area('Image description (alt text)',n+'alt',v.alt,500)+area('Caption',n+'caption',v.caption)+'<img class="editor-image" id="'+n+'thumb" src="'+esc(v.image)+'" alt=""><input type="hidden" name="'+n+'image" value="'+esc(v.image)+'"><div class="field"><label for="'+n+'upload">Choose image from Photos or Files</label><input id="'+n+'upload" type="file" accept="image/jpeg,image/png,image/webp" data-upload="'+i+'"></div>'+(v.sample?'':'<a class="text-link" data-original-link="'+esc(v.id)+'" aria-disabled="true">Preparing original…</a>')+'<p class="help">JPEG, PNG, or WebP, up to 12 MB. Resized to 1200 px and embedded in your content file. No image-hosting account needed.</p><label class="help"><input type="checkbox" name="'+n+'featured" '+(v.featured?'checked':'')+'> Feature this image on Home</label><br><button class="danger" type="button" data-remove-archive="'+i+'">Remove '+esc(v.title||'image')+'</button></div></details>';}
 function projectEditor(v,i){const n='p'+i+'-';return '<details class="editor-entry"><summary>'+esc(v.title||'New project')+'</summary><div>'+field('Project title',n+'title',v.title,'text',100,true)+select('Status',n+'status',v.status,['Prototype','Concept'])+area('Summary',n+'summary',v.summary,500)+area('Research notes',n+'notes',v.notes,10000)+field('Source link (https://)',n+'url',v.url,'url',1500)+'<button class="danger" type="button" data-remove-project="'+i+'">Remove '+esc(v.title||'project')+'</button></div></details>';}
-function studio(){return '<section class="page studio-layout">'+head('Your mobile workspace','Studio.','Keep collecting. Keep the current moving.')+'<div class="notice"><p>Studio saves drafts on this device only. It is not a private admin account. To publish, export content.json and upload it to the GitHub repository. Keep a backup in Files; browser storage can be cleared.</p></div><form id="studio-form"><div class="form-section"><h2>The introduction</h2>'+area('Introduction','introduction',draft.site.introduction,1000)+area('About text','about',draft.site.about,10000)+'<div class="form-grid">'+field('Contact email','email',draft.site.email,'email',254)+field('Contact link','contactUrl',draft.site.contactUrl,'url',1500)+'</div><p class="help">Contact fields are optional. Only https:// contact links are accepted.</p></div><div class="form-section"><h2>Archive</h2>'+draft.archive.map(archiveEditor).join('')+'<button class="text-link" type="button" id="add-archive">+ Add image</button></div><div class="form-section"><h2>Research</h2>'+draft.projects.map(projectEditor).join('')+'<button class="text-link" type="button" id="add-project">+ Add project</button></div><p class="form-error" id="form-error" role="alert"></p><div class="studio-actions"><button class="button" type="submit">Save draft</button><button class="button secondary" type="button" id="preview-draft">Preview draft</button><button class="button secondary" type="button" id="export-content">Export content</button></div></form><div class="form-section"><h2>Back up & continue</h2><div class="field"><label for="import-content">Import content</label><input type="file" id="import-content" accept=".json,application/json"></div><p class="help">Import an exported content.json backup. It becomes your local draft; the published site stays unchanged.</p><button class="danger" type="button" id="restore">Restore published</button></div><div class="studio-actions"><button class="button" id="download-site" type="button">Download website ZIP</button><a class="button secondary" href="#publish">Publishing guide ↗</a></div><p class="help">Website ZIP uses your current valid draft. Save to keep a copy on this phone. It includes all files for a standalone static website.</p></section>';}
+function studio(){return '<section class="page studio-layout">'+head('Your mobile workspace','Studio.','Keep collecting. Keep the current moving.')+'<div class="notice"><p>Studio saves drafts on this device only. It is not a private admin account. To publish, export content.json and upload it to the GitHub repository. Keep a backup in Files; browser storage can be cleared.</p></div><form id="studio-form"><div class="form-section"><h2>The introduction</h2>'+area('Introduction','introduction',draft.site.introduction,1000)+area('About text','about',draft.site.about,10000)+'<div class="form-grid">'+field('Contact email','email',draft.site.email,'email',254)+field('Contact link','contactUrl',draft.site.contactUrl,'url',1500)+'</div><p class="help">Contact fields are optional. Only https:// contact links are accepted.</p></div><div class="form-section"><h2>Archive</h2>'+draft.archive.map(archiveEditor).join('')+batchControls()+'<button class="text-link" type="button" id="add-archive">+ Add image</button></div><div class="form-section"><h2>Research</h2>'+draft.projects.map(projectEditor).join('')+'<button class="text-link" type="button" id="add-project">+ Add project</button></div><p class="form-error" id="form-error" role="alert"></p><div class="studio-actions"><button class="button" type="submit">Save draft</button><button class="button secondary" type="button" id="preview-draft">Preview draft</button><button class="button secondary" type="button" id="export-content">Export content</button></div></form><div class="form-section"><h2>Back up & continue</h2><div class="field"><label for="import-content">Import content</label><input type="file" id="import-content" accept=".json,application/json"></div><p class="help">Import an exported content.json backup. It becomes your local draft; the published site stays unchanged.</p><button class="danger" type="button" id="restore">Restore published</button></div><div class="studio-actions"><button class="button" id="download-site" type="button">Download website ZIP</button><a class="button secondary" href="#publish">Publishing guide ↗</a></div><p class="help">Website ZIP uses your current valid draft. Save to keep a copy on this phone. It includes all files for a standalone static website.</p></section>';}
 function publish(){return '<section class="page guide">'+head('From your iPhone','Ready for the world.','Free hosting. No terminal. No build command.')+'<div class="notice"><p>This app is prepared for the existing <a href="https://github.com/jdowen88-a11y/BINAIUI" target="_blank" rel="noopener noreferrer">BINAIUI repository</a>. Review and merge the app branch, then serve main → /docs. Existing canon and Python files stay in place.</p></div><ol class="guide-list"><li><div><h3>Make it yours</h3><p>Open <a href="#studio">Studio</a>. Add your real contact details and images, edit the research notes, and tap Save draft. Preview your draft to review all four sections.</p></div></li><li><div><h3>Review the GitHub changes</h3><p>In Safari, open your BINAIUI repository and the mobile PWA pull request. Review Files changed and the browser checks, then merge when you are ready to publish.</p></div></li><li><div><h3>Upload your content</h3><p>In Studio tap Export content. Save content.json to Files. In Safari, open the repository’s docs folder, choose Add file → Upload files, select your new content.json, and commit the replacement.</p><p>If Safari hides an upload or Settings control, use aA → Request Desktop Website. For a single file you can also use GitHub’s pencil editor in Safari.</p></div></li><li><div><h3>Enable free GitHub Pages</h3><p>Open Settings → Pages. Under Build and deployment, choose Deploy from a branch, select main and /docs, then Save. A public repository is eligible for free Pages.</p></div></li><li><div><h3>Open the published address</h3><p>Wait for GitHub’s Pages deployment to finish. Use the address displayed in Settings → Pages. For this repository it should be <code>https://jdowen88-a11y.github.io/BINAIUI/</code>. That address is expected, not a claim that the site is live.</p></div></li><li><div><h3>Install and check on your iPhone</h3><p>Open the live site in Safari. Share → Add to Home Screen → Add. Launch it from Home Screen, view each section online, then enable Airplane Mode and reopen it to check offline use.</p></div></li></ol><div class="form-section"><h2>Starting in another repository?</h2><p>Download the website ZIP from Studio, save it in Files, and tap it to uncompress. Create a public repository in Safari. Upload the files inside the extracted folder, with index.html at the repository root. Enable Pages from main → / (root). Upload files, not the ZIP itself.</p><p class="help">For later content changes, export and replace content.json in that repository. A custom domain is optional. No API keys or paid backend are required.</p><button class="button" id="download-site" type="button">Download website ZIP</button></div><div class="form-section"><h2>Before you publish</h2><p>Review the sample artwork, add a public contact address if you want people to reach you, check all source links, and review the test results. Physical iPhone installation, Safari image picking, and Home Screen offline launch still need verification on your device after deployment.</p></div></section>';}
 function install(){return '<section class="page guide">'+head('Keep it close','A place on your<br>Home Screen.','BINAIUI is a progressive web app. No App Store required.')+'<div class="install-illustration"><img src="./apple-touch-icon.png" alt="BINAIUI Home Screen icon"><p><strong>BINAIUI</strong><br>One current. Infinite forms.<br>Archive & research, available offline.</p></div><ol class="guide-list"><li><div><h3>Open in Safari</h3><p>Use your published GitHub Pages address in Safari on your iPhone. The development preview may open inside a frame; use the published site for installation.</p></div></li><li><div><h3>Tap Share</h3><p>Tap Safari’s Share button (the square with an arrow pointing up).</p></div></li><li><div><h3>Add to Home Screen</h3><p>Scroll through the Share menu and choose Add to Home Screen. Keep the name BINAIUI, turn on Open as Web App if shown, and tap Add.</p></div></li><li><div><h3>Follow the current offline</h3><p>Launch BINAIUI from Home Screen once while online and wait for “Ready offline” in the footer. The site and local artwork will then work without a connection. External GitHub links still need the internet.</p></div></li></ol><p class="help">On iPhone, installation is a Safari Share menu action. An automatic install prompt is not required.</p><a class="button secondary" href="#publish">Publishing guide ↗</a></section>';}
 function render(){ if(!published)return;
- const r=route();const pages={home,archive,projects,about,studio,publish,install};
+ const r=route();const pages={home,archive,projects,about,studio,publish,install,roadmap:()=>window.BINAIUI_GENESIS?.roadmap()||'<section class="page"><h1>Roadmap unavailable</h1></section>'};
  if(!pages[r]){location.hash='home';return;}
+ releaseOriginalObjectUrls();
  main.innerHTML=pages[r]();
+ if(r==='studio'&&window.BINAIUI_GENESIS){const host=main.querySelector('.studio-layout');if(host){const details=document.createElement('details');details.id='gx-classic';details.className='gx-classic-details';details.open=true;const summary=document.createElement('summary');summary.textContent='Archive editor · draft batch importer · original ZIP backups';details.append(summary);const content=document.createElement('div');content.className='gx-classic-inner';while(host.firstChild)content.append(host.firstChild);details.append(content);host.innerHTML=window.BINAIUI_GENESIS.studioMarkup();host.append(details);}}
+
  $$('#draft-banner')[0].hidden=!preview;
  $$('nav a').forEach(a=>{a.removeAttribute('aria-current');if(a.getAttribute('href')==='#'+r)a.setAttribute('aria-current','page');});
- document.title='BINAIUI — '+({home:'One current. Infinite forms.',archive:'Archive',projects:'Projects & research',about:'About & contact',studio:'Studio',publish:'Publishing guide',install:'Install'}[r]);
+ document.title='BINAIUI — '+({home:'One current. Infinite forms.',archive:'Archive',projects:'Projects & research',about:'About & contact',studio:'Studio',publish:'Publishing guide',install:'Install',roadmap:'GitHub branch roadmap'}[r]);
  bindArtwork();
  if(r==='archive'){archiveResults();$('#archive-search').addEventListener('input',e=>{search=e.target.value;archiveResults();});}
  $$('.chip',main).forEach(b=>b.onclick=()=>{if(r==='archive')archiveFilter=b.dataset.filter;else projectFilter=b.dataset.filter;const scroll=scrollY;const selected=b.dataset.filter;render();scrollTo(0,scroll);$('.chip',main).find(x=>x.dataset.filter===selected)?.focus({preventScroll:true});});
- if(r==='studio')bindStudio();
+ if(r==='studio'){bindStudio();window.BINAIUI_GENESIS?.mountStudio();}if(r==='roadmap')window.BINAIUI_GENESIS?.mountRoadmap();
  const download=$('#download-site'); if(download)download.onclick=()=>downloadWebsite(download);
  if(lastRoute!==r){window.scrollTo({top:0,behavior:'instant'});main.focus({preventScroll:true});}lastRoute=r;
 }
@@ -76,6 +308,38 @@ function readEditor(){const f=$('#studio-form');if(f&&!f.reportValidity())return
 function save(){const next=readEditor();if(!next)return false;draft=next;try{localStorage.setItem(key,JSON.stringify(next));toast('Draft saved on this device. Export a backup to Files.');return true;}catch(e){$('#form-error').textContent='This browser could not save your draft. Your edits are still here. Export content to Files for a backup, or use fewer or smaller images.';return false;}}
 function downloadFile(name,content,type='application/json'){const blob=content instanceof Blob?content:new Blob([content],{type});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}
 function bindStudio(){
+ const batchInput=$('#batch-images');
+ batchInput.onchange=event=>{
+  const files=Array.from(event.target.files||[]);
+  event.target.value='';
+  void importArtworkBatch(files);
+ };
+ $('#cancel-batch').onclick=()=>{batchCancelled=true;const progress=$('#batch-progress');if(progress)progress.textContent='Stopping after the current image…';};
+ $('#export-originals').onclick=()=>{void exportOriginalBackups();};
+ $$('[data-original-link]').forEach(link=>{
+  const container=link.closest('details');
+  let loading=false;
+  const prepare=async()=>{
+   if(loading||link.href||!link.isConnected)return;
+   loading=true;
+   const record=await findOriginal(link.dataset.originalLink);
+   if(!link.isConnected)return;
+   if(!record){
+    link.textContent='Original unavailable on this device';
+    link.setAttribute('aria-disabled','true');
+    return;
+   }
+   const url=URL.createObjectURL(record.blob);
+   originalObjectUrls.add(url);
+   link.href=url;
+   link.download=record.name;
+   link.textContent='Download original';
+   link.removeAttribute('aria-disabled');
+  };
+  container.querySelector('summary').addEventListener('click',()=>{void prepare();});
+  container.addEventListener('toggle',()=>{if(container.open)void prepare();});
+  if(container.open)void prepare();
+ });
  $('#studio-form').onsubmit=e=>{e.preventDefault();save();};
  $('#preview-draft').onclick=()=>{const next=readEditor();if(next){draft=next;preview=true;location.hash='home';toast('Local preview for this session. Save or export your draft in Studio.');}};
  $('#export-content').onclick=()=>{const next=readEditor();if(next){draft=next;downloadFile('content.json',JSON.stringify(draft,null,2)+'\n');toast('Content exported. Keep the backup in Files.');}};
@@ -85,7 +349,9 @@ function bindStudio(){
  $$('[data-remove-project]').forEach(b=>b.onclick=()=>{if(confirm('Remove this project from your local draft?')){draft=collect(false);draft.projects.splice(Number(b.dataset.removeProject),1);render();}});
  $$('[data-upload]').forEach(input=>input.onchange=async()=>{const file=input.files[0];if(!file)return;try{
  if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>12*1024*1024)throw Error('Choose a JPEG, PNG, or WebP image under 12 MB. For HEIC, export a JPEG from Photos first.');
- const url=URL.createObjectURL(file),img=new Image();try{await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(Error('This image could not be opened. Try a JPEG from Photos.'));img.src=url;});const scale=Math.min(1,1200/Math.max(img.naturalWidth,img.naturalHeight));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));canvas.height=Math.max(1,Math.round(img.naturalHeight*scale));const ctx=canvas.getContext('2d');ctx.fillStyle='#edeae4';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);const value=canvas.toDataURL('image/jpeg',.82);const n='a'+input.dataset.upload+'-';$('#studio-form').elements.namedItem(n+'image').value=value;$('#'+n+'thumb').src=value;draft.archive[Number(input.dataset.upload)].sample=false;toast('Image added. Write its alt text, then save your draft.');}finally{URL.revokeObjectURL(url);}
+ const url=URL.createObjectURL(file),img=new Image();try{await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(Error('This image could not be opened. Try a JPEG from Photos.'));img.src=url;});const scale=Math.min(1,1200/Math.max(img.naturalWidth,img.naturalHeight));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));canvas.height=Math.max(1,Math.round(img.naturalHeight*scale));const ctx=canvas.getContext('2d');ctx.fillStyle='#edeae4';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);const value=canvas.toDataURL('image/jpeg',.82);const n='a'+input.dataset.upload+'-';$('#studio-form').elements.namedItem(n+'image').value=value;$('#'+n+'thumb').src=value;draft.archive[Number(input.dataset.upload)].sample=false;
+ const originalKept=await preserveOriginal(draft.archive[Number(input.dataset.upload)].id,file);
+ toast(originalKept?'Image added. Write its alt text, then save your draft.':'Image added, but original storage failed. Save your original separately in Photos or Files.');}finally{URL.revokeObjectURL(url);}
  }catch(e){toast(e.message);input.value='';}});
  $('#import-content').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>25*1024*1024)throw Error('Choose a content file smaller than 25 MB.');const next=normalize(JSON.parse(await file.text()));localStorage.setItem(key,JSON.stringify(next));draft=next;preview=false;render();toast('Content imported as a local draft.');}catch(err){toast('Import failed: '+err.message);}e.target.value='';};
  $('#restore').onclick=()=>{if(confirm('Restore published content? Export a backup first to keep your draft.')){draft=copy(published);preview=false;try{localStorage.removeItem(key);}catch{}render();toast('Published content restored.');}};
@@ -102,7 +368,7 @@ function zip(files){
 }
 async function downloadWebsite(button){
  const label=button.textContent;button.disabled=true;button.textContent='Preparing your website…';
- try{if($('#studio-form')){const next=readEditor();if(!next)throw Error('Check your draft fields first');draft=next;}const names=['index.html','styles.css','app.js','content.json','manifest.webmanifest','sw.js','icon-192.png','icon-512.png','apple-touch-icon.png','helix.svg','prism.svg','seed.svg','intersection.svg','lattice.svg','current.svg','README.md','PUBLICATION-CHECKLIST.md','TEST-REPORT.md','.nojekyll'];
+ try{if($('#studio-form')){const next=readEditor();if(!next)throw Error('Check your draft fields first');draft=next;}const names=['index.html','styles.css','genesis-studio.css','app.js','genesis-studio.js','genesis-reference-manifest.json','content.json','manifest.webmanifest','sw.js','icon-192.png','icon-512.png','apple-touch-icon.png','helix.svg','prism.svg','seed.svg','intersection.svg','lattice.svg','current.svg','README.md','UNIFIED-STUDIO.md','PUBLICATION-CHECKLIST.md','TEST-REPORT.md','.nojekyll'];
  const files=[];for(const name of names){if(name==='.nojekyll'){files.push([name,new Uint8Array()]);continue;}if(name==='content.json'){files.push([name,new TextEncoder().encode(JSON.stringify(normalize(draft),null,2)+'\n')]);continue;}const res=await fetch('./'+name);if(!res.ok)throw Error('Could not download '+name);files.push([name,new Uint8Array(await res.arrayBuffer())]);}
  downloadFile('BINAIUI.zip',zip(files),'application/zip');toast('Website ZIP ready. Save it to Files, then uncompress.');}
  catch(e){toast('Download failed: '+e.message+'. Try again online.');}finally{button.disabled=false;button.textContent=label;}
@@ -123,8 +389,9 @@ async function setupPWA(){
 $('#viewer .dialog-close').onclick=()=>$('#viewer').close();
 $('#viewer').addEventListener('click',e=>{if(e.target===$('#viewer')){const r=$('#viewer').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('#viewer').close();}});
 $('#exit-draft').onclick=()=>{preview=false;render();};
-window.addEventListener('hashchange',()=>{if(route()==='main'){main.focus();return;}render();});
+window.addEventListener('hashchange',()=>{if(batchBusy&&route()!=='studio')batchCancelled=true;if(route()==='main'){main.focus();return;}render();});
 window.addEventListener('online',connection);window.addEventListener('offline',connection);
+window.BINAIUI_BACKUPS={async check(){const list=(draft?.archive||[]).filter(a=>!a.sample);let saved=0;for(const entry of list)if(await findOriginal(entry.id))saved++;return {saved,total:list.length};}};
 async function boot(){try{const res=await fetch('./content.json',{cache:'no-cache'});if(!res.ok)throw Error('Content could not be loaded.');published=normalize(await res.json());draft=copy(published);try{const stored=localStorage.getItem(key);if(stored)draft=normalize(JSON.parse(stored));}catch{toast('A saved draft could not be loaded. Published content is available.');}render();connection();setupPWA();}catch(e){main.innerHTML='<section class="page"><h1>Reconnect to the current.</h1><p>'+esc(e.message)+'</p><p>Open BINAIUI online once to prepare it for offline use.</p><button class="button" id="retry" type="button">Try again</button></section>';$('#retry').onclick=()=>location.reload();}}
 boot();
 })();

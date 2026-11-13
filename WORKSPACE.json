@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "updated": "2026-11-13",
+  "integration_branch": "integrate/genesis-workspace-20261113",
+  "policy": {
+    "preserve_sources": true,
+    "deploy": false,
+    "merge_main": false,
+    "live_trading": false,
+    "private_repo_contents_excluded": true
+  },
+  "repositories": [
+    {
+      "name": "ai-music-platform-backend",
+      "full_name": "jdowen88-a11y/ai-music-platform-backend",
+      "visibility": "public",
+      "integration": "catalogue-only"
+    },
+    {
+      "name": "private-01",
+      "visibility": "private",
+      "integration": "catalogue-only"
+    },
+    {
+      "name": "nova",
+      "full_name": "jdowen88-a11y/nova",
+      "visibility": "public",
+      "integration": "catalogue-only"
+    },
+    {
+      "name": "pump",
+      "full_name": "jdowen88-a11y/pump",
+      "visibility": "public",
+      "integration": "offline-reference-check",
+      "validation": {
+        "ref": "e8b9ddb13ccd29ba3f8ab0880fe0a2709e1eaaf5",
+        "command": "npx tsc --noEmit",
+        "runner": "node22",
+        "readiness": "compile-check-only-no-trading"
+      }
+    },
+    {
+      "name": "private-02",
+      "visibility": "private",
+      "integration": "catalogue-only"
+    },
+    {
+      "name": "DID",
+      "full_name": "jdowen88-a11y/DID",
+      "visibility": "public",
+      "integration": "offline-reference-check",
+      "validation": {
+        "ref": "bec0ab6d1fcee916b99940b4f9480a69e50fd7db",
+        "command": "npm test",
+        "runner": "node22"
+      }
+    },
+    {
+      "name": "dual-cognition-agent",
+      "full_name": "jdowen88-a11y/dual-cognition-agent",
+      "visibility": "public",
+      "integration": "offline-reference-check",
+      "validation": {
+        "ref": "5598e55b1ea4c73605f1c2a3675055705d53e5f5",
+        "command": "pytest -q",
+        "runner": "python312"
+      }
+    },
+    {
+      "name": "project-unknown",
+      "full_name": "jdowen88-a11y/project-unknown",
+      "visibility": "public",
+      "integration": "offline-reference-check",
+      "validation": {
+        "ref": "95f8ce7f56fc80c40f2500deb73e51c1b834630b",
+        "command": "npm test",
+        "runner": "node22"
+      }
+    },
+    {
+      "name": "private-03",
+      "visibility": "private",
+      "integration": "catalogue-only"
+    },
+    {
+      "name": "private-04",
+      "visibility": "private",
+      "integration": "catalogue-only"
+    },
+    {
+      "name": "ICU",
+      "full_name": "jdowen88-a11y/ICU",
+      "visibility": "public",
+      "integration": "catalogue-only"
+    },
+    {
+      "name": "AI-failures",
+      "full_name": "jdowen88-a11y/AI-failures",
+      "visibility": "public",
+      "integration": "catalogue-only"
+    },
+    {
+      "name": "private-05",
+      "visibility": "private",
+      "integration": "catalogue-only"
+    },
+    {
+      "name": "private-06",
+      "visibility": "private",
+      "integration": "catalogue-only"
+    },
+    {
+      "name": "phone-home",
+      "full_name": "jdowen88-a11y/phone-home",
+      "visibility": "public",
+      "integration": "catalogue-only"
+    },
+    {
+      "name": "private-07",
+      "visibility": "private",
+      "integration": "catalogue-only"
+    },
+    {
+      "name": "private-08",
+      "visibility": "private",
+      "integration": "catalogue-only"
+    },
+    {
+      "name": "private-09",
+      "visibility": "private",
+      "integration": "catalogue-only"
+    },
+    {
+      "name": "private-10",
+      "visibility": "private",
+      "integration": "catalogue-only"
+    },
+    {
+      "name": "private-11",
+      "visibility": "private",
+      "integration": "catalogue-only"
+    },
+    {
+      "name": "private-12",
+      "visibility": "private",
+      "integration": "catalogue-only"
+    },
+    {
+      "name": "private-13",
+      "visibility": "private",
+      "integration": "catalogue-only"
+    },
+    {
+      "name": "BINAIUI",
+      "full_name": "jdowen88-a11y/BINAIUI",
+      "visibility": "public",
+      "integration": "host-local-tests"
+    }
+  ]
+}

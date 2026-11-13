@@ -1,3 +1,9 @@
+# Unified GENESIS Studio integration (review only)
+
+This branch preserves the entire mobile editing and **draft** batch-import workflow and adds a full-bleed procedural field, reference registry, AirX explorer, UNKEY, local backup status and a GitHub branch roadmap. See [UNIFIED-STUDIO.md](UNIFIED-STUDIO.md) for exact sources, integrity protections, mobile usage, test checklist and publication prerequisites. The site is not merged or deployed by this change.
+
+---
+
 # BINAIUI public app
 
 A mobile-first static progressive web app. Plain HTML, CSS, JavaScript, and JSON.
@@ -36,6 +42,32 @@ Open the footer's Studio link. Edit the introduction, about/contact, images, or
 research. Images can be chosen from Photos/Files. JPEG, PNG and WebP up to 12 MB
 are resized to a maximum 1200px edge and embedded in content.json. Convert HEIC
 to JPEG using Photos if needed.
+
+### Import several artworks at once
+
+In Studio's Archive section, use **Add multiple artworks from Photos or Files** to
+select several JPEG, PNG or WebP images. Importing is serial, so one invalid file
+does not discard the other successful entries. Duplicate filenames receive distinct
+titles and IDs. Each new entry has editable title, category, alternative description
+and caption fields; review and correct the generated starting text before publishing.
+Use **Cancel import** to stop after the current file. The archive still has a
+60-artwork limit, including its six starter studies. A draft save is attempted after
+each successful image; a visible warning explains if device storage is full.
+
+Resized display versions are embedded in content.json and the website ZIP. Original
+images are stored separately in this browser's IndexedDB when available. Small
+originals (256 KB or less) also receive a separate local-browser backup for Safari
+recovery; if browser storage fails, originals stay in memory for the open tab. The importer shows a warning when a
+file could not be saved persistently. Use **Download original (if saved)** inside
+an artwork entry to retrieve an individual source file, or **Download originals
+backup ZIP** to save the retained originals and a metadata manifest to Files.
+These original backups are **not** included in content.json or BINAIUI.zip.
+Always keep independent originals in Photos or Files: deleting browser data
+deletes locally stored originals, and unsaved in-memory copies disappear when the
+tab closes. Back up the originals before switching devices, clearing storage or
+deleting an archive entry. The originals ZIP is limited to 120 MB to avoid
+unmanageably large downloads; download sources individually if needed.
+
 
 Save draft keeps changes in this browser on this phone. If phone storage is full,
 Export content and Download website ZIP still back up valid edits to Files.
