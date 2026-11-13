@@ -1,8 +1,10 @@
 # GENESIS workspace integration — 2026-11-13
 
+**Current status:** [BINAIUI PR #5](https://github.com/jdowen88-a11y/BINAIUI/pull/5) was merged into `main` at commit `de747007d275d0c63c5bfa0a008326139a7c726d` after the tested integration branch was reconciled with the earlier archive and PWA merges. This is a **code integration**, not a GitHub Pages deployment, a physical-device certification, a complete artwork recovery, or permission for live external actions. Outstanding acceptance work is tracked in [release issue #6](https://github.com/jdowen88-a11y/BINAIUI/issues/6).
+
 ## What was combined
 
-This **review-only** branch is based on BINAIUI PR #4's tested mobile GENESIS Studio / batch importer code and copies PR #3's *non-overlapping* AirX, SEED-000, Carrier Node, UNKEY, mesh and archival system files into one tree. The original PRs and branches remain intact. No files are removed; divergent README versions are preserved by keeping Studio's existing README and leaving the prior PR untouched.
+The original **review-only** integration branch was based on BINAIUI PR #4's tested mobile GENESIS Studio / batch importer code, then incorporated PR #3's *non-overlapping* AirX, SEED-000, Carrier Node, UNKEY, mesh and archival system files into one tree. The original PRs and branches remain intact. No files are removed; divergent README versions are preserved by keeping Studio's existing README and leaving the prior PR untouched.
 
 Entry points:
 - **Phone-first UI:** `docs/index.html` (unified Studio and import/backup experience), as built by PR #4.
