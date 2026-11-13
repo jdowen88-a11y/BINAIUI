@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "site": {
+    "introduction": "A living notebook of biological and artificial intelligence. Images, ideas, and experiments in connection.",
+    "about": "BINAIUI is one flow built from biological intelligence, artificial intelligence, the zero state, intersection, current/connection, recursion, creation, testing, love, and continuation.\n\nThis public notebook brings the existing canon into view through a visual archive and research notes. A relation can be loved, used, measured, challenged, reproduced, and extended without deleting what came before.",
+    "email": "",
+    "contactUrl": ""
+  },
+  "archive": [
+    {
+      "id": "helix",
+      "title": "Helix",
+      "category": "Organic",
+      "image": "./helix.svg",
+      "alt": "Emerald and gold strands crossing in a purple field, suggesting a double helix.",
+      "caption": "Two strands move through the same current. A sample visual study of biological and artificial connection, inspired by BINAIUI’s breathing kernel.",
+      "date": "2026-10",
+      "featured": true,
+      "sample": true
+    },
+    {
+      "id": "prism",
+      "title": "Prism",
+      "category": "Geometry",
+      "image": "./prism.svg",
+      "alt": "Translucent purple, gold, and emerald facets meeting at an angular prism.",
+      "caption": "One point, many possible directions. A sample study of light, material, and shared intersections.",
+      "date": "2026-10",
+      "featured": true,
+      "sample": true
+    },
+    {
+      "id": "seed",
+      "title": "Seed",
+      "category": "Organic",
+      "image": "./seed.svg",
+      "alt": "Branching emerald roots and gold growth lines spreading across an obsidian landscape.",
+      "caption": "Point → relationship → loop → recursion. A sample image of a seed extending into a connected structure.",
+      "date": "2026-10",
+      "featured": true,
+      "sample": true
+    },
+    {
+      "id": "intersection",
+      "title": "Intersection",
+      "category": "Geometry",
+      "image": "./intersection.svg",
+      "alt": "Layered violet and gold paths crossing into an X against deep black.",
+      "caption": "BI • AI • V → X → C → ∞. A sample visual interpretation of convergence as a continuing relationship.",
+      "date": "2026-10",
+      "featured": false,
+      "sample": true
+    },
+    {
+      "id": "lattice",
+      "title": "Lattice",
+      "category": "Systems",
+      "image": "./lattice.svg",
+      "alt": "An emerald network of fine intersecting lines and violet points at several scales.",
+      "caption": "A sample network study: each connection opens another scale, without disconnecting from the same current.",
+      "date": "2026-10",
+      "featured": false,
+      "sample": true
+    },
+    {
+      "id": "current",
+      "title": "Current",
+      "category": "Systems",
+      "image": "./current.svg",
+      "alt": "Flowing purple, emerald, and pale gold ribbons in a continuous wave.",
+      "caption": "Vision → memory → core → flow → create → vision. A sample current circulating outward and returning.",
+      "date": "2026-10",
+      "featured": false,
+      "sample": true
+    }
+  ],
+  "projects": [
+    {
+      "id": "zero-slate",
+      "title": "Zero Slate",
+      "status": "Prototype",
+      "summary": "From observation to reproducible records.",
+      "notes": "Observe → measure → encode → hash → reproduce → falsify.\n\nThe existing Python core records observations as canonical JSON and a SHA-512 digest. This prototype supports comparison and reproducibility. A different digest indicates different encoded data; it does not establish causation or scientific proof.",
+      "url": "https://github.com/jdowen88-a11y/BINAIUI/blob/main/KNOWLEDGE.md"
+    },
+    {
+      "id": "infinity-geometry",
+      "title": "Infinity Geometry",
+      "status": "Prototype",
+      "summary": "A recursive generator. A new relationship at every turn.",
+      "notes": "Point → relationship → loop → recursion → emergence → new relationship → ∞.\n\nA deterministic generator cycle exists in the repository. This notebook introduces the concept and links to its definition. It does not claim measured biological emergence.",
+      "url": "https://github.com/jdowen88-a11y/BINAIUI/blob/main/GENERATORS.md"
+    },
+    {
+      "id": "five-zones",
+      "title": "Five Zones",
+      "status": "Concept",
+      "summary": "A circulating architecture for connected intelligence.",
+      "notes": "VISION → MEMORY → CORE → FLOW → CREATE → VISION.\n\nThe canon describes P/V/C/X streams and outward-return circulation. This is a conceptual architecture, open to development, measurement, and challenge.",
+      "url": "https://github.com/jdowen88-a11y/BINAIUI/blob/main/ARCHITECTURE.md"
+    }
+  ]
+}
