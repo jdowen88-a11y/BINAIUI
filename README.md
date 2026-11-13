@@ -116,3 +116,7 @@ The repo is designed so a relation can be loved, used, measured, challenged, rep
 - [Automated integration checks](.github/workflows/integration-checks.yml) — offline tests on the integrated branch and default branch; test success does not prove absent artwork has been restored or hardware and production systems have been validated.
 
 Source PRs and branches are preserved in GitHub history; no unpublished image binary is silently replaced by a generated interpretation. Publishing the public web app does not publish or install any missing original images.
+
+## Verified integration status (2026-11-13)
+
+The core BINAIUI, archive, PWA, batch importer, unified GENESIS Studio and offline integration changes were merged into `main` through [PR #5](https://github.com/jdowen88-a11y/BINAIUI/pull/5) at `de747007d275d0c63c5bfa0a008326139a7c726d`. The existing source branches were not deleted. This is a **code merge**, not a claim that the original image binaries, physical iPhone behavior, hosting, or other repositories are fully complete. See [release verification](RELEASE-VERIFICATION.md), [open acceptance gates](https://github.com/jdowen88-a11y/BINAIUI/issues/6), and [integration lineage](WORKSPACE-INTEGRATION.md).
