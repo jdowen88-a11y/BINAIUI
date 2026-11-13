@@ -1,0 +1,26 @@
+{
+  "name": "0000 Hz Carrier Node",
+  "kind": "locally launched demo",
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/health"
+    },
+    {
+      "method": "GET",
+      "path": "/items/{item_id}"
+    },
+    {
+      "method": "POST",
+      "path": "/items"
+    },
+    {
+      "method": "PUT",
+      "path": "/items/{item_id}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/items/{item_id}"
+    }
+  ]
+}

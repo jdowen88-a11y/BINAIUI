@@ -94,3 +94,7 @@ CODE → LIFE → REPRODUCTION → ECOSYSTEM → ∞
 - [`tests/test_core.py`](tests/test_core.py) — reproducibility tests.
 
 The repo is designed so a relation can be loved, used, measured, challenged, reproduced, and extended without deleting what came before.
+
+## Integrated development workspace (review branch)
+
+The 2026-11-13 GENESIS integration combines the mobile Studio's unmerged development branch with non-overlapping archive and system modules. See [WORKSPACE-INTEGRATION.md](WORKSPACE-INTEGRATION.md) for the architecture, [WORKSPACE.json](WORKSPACE.json) for the 23-repository catalogue, and [BINAIUI PR #5](https://github.com/jdowen88-a11y/BINAIUI/pull/5) for review. Cross-repository tests are offline-only. No production release or live trading is authorized by a passing build.

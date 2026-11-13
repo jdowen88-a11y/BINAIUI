@@ -1,0 +1,70 @@
+name: GENESIS integrated offline checks
+on:
+  push:
+    branches: [integrate/genesis-workspace-20261113]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integrated-python:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest
+      - name: Validate 23-repository inventory
+        run: python tools/workspace_validate.py
+      - name: Test integrated GENESIS core, AirX, archive and Carrier
+        run: python -m pytest -q
+      - name: Python compilation
+        run: python -m compileall -q binaiui tools
+  offline-node-projects:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: DID
+            ref: bec0ab6d1fcee916b99940b4f9480a69e50fd7db
+          - project: project-unknown
+            ref: 95f8ce7f56fc80c40f2500deb73e51c1b834630b
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: jdowen88-a11y/${{ matrix.project }}
+          ref: ${{ matrix.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run committed Node test suite without installs
+        run: npm test
+  offline-python-runtime:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: jdowen88-a11y/dual-cognition-agent
+          ref: 5598e55b1ea4c73605f1c2a3675055705d53e5f5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[test]'
+      - run: python -m pytest -q
+      - run: binaiui --db /tmp/binaiui-integration.sqlite3 doctor
+  offline-typescript-pump:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: jdowen88-a11y/pump
+          ref: e8b9ddb13ccd29ba3f8ab0880fe0a2709e1eaaf5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install code dependencies (disable install scripts)
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Compile-only check; executor blocks live swaps
+        run: npx tsc --noEmit
