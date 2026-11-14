@@ -72,8 +72,9 @@ for (const prefix of ['/', '/BINAIUI/']) {
       await expect(page.locator('#gx-active')).toContainText('AIRX-05');
       await page.getByRole('tab',{name:'UNKEY'}).click();
       const output=page.locator('#gx-unkey-output');
-      await expect(output).toContainText('ACCRETE');
-      await expect(output).toContainText('RECRYSTALLIZE');
+      const nineLines=(await output.textContent()).trim().split('\n');
+      expect(nineLines).toHaveLength(9);
+      expect(nineLines.every(line=>/^[09•∴⋅↗⇝⟡ ]+$/.test(line))).toBe(true);
     });
 
     test('draft importer, local-original inspection and backups stay available', async ({ page }) => {

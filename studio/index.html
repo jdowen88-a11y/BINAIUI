@@ -23,7 +23,7 @@ small{display:block;color:#bba9df}label{display:flex;gap:8px;align-items:center}
 <small id="active">GENESIS-01 • cosmic neural lattice</small>
 </section>
 <h2>Choose a system</h2><section id="refs" class="grid"></section>
-<section class="panel"><h2>UNKEY</h2><div class="controls"><input id="u" value="∄⌑ ⫷ UNKEY⁸ ∅ ꙮ Δ∞ ⫸" aria-label="UNKEY seed"><button id="run">Evolve</button></div><pre id="output"></pre></section>
+<section class="panel"><h2>UNKEY</h2><div class="controls"><input id="u" value="0•9⇝↗" aria-label="UNKEY seed"><button id="run">Evolve</button></div><pre id="output"></pre></section>
 <p><small>Artwork binaries are not included in this GitHub code branch. The separate offline ZIP contains all ten originals, thumbnail previews and a richer image gallery. AirX systems are unverified engineering concepts; this page does not connect to hardware.</small></p>
 </main><script src="../docs/zero-nine-ocean.js"></script>
 <script>
@@ -45,6 +45,6 @@ $("refs").append(b);
 }
 $("make").onclick=()=>{seed=Number($("seed").value)||0;draw();};
 $("save").onclick=()=>{let a=document.createElement("a");a.href=$("c").toDataURL("image/png");a.download="genesis-field-"+seed+".png";a.click();};
-$("run").onclick=()=>{let s=$("u").value,x=[...s].reduce((a,c)=>Math.imul(a^c.codePointAt(0),16777619)>>>0,2166136261),verbs=["ACCRETE","STRATIFY","SUBDUCT","FOLD","OVERTURN","SHEAR","METAMORPHOSE","ERODE","RECRYSTALLIZE"],glyphs="∄⌑⫷⫸∅ꙮΔ∞◇⟐◌↶",lines=[];for(let i=0;i<9;i++){let r=random(x+i);lines.push(verbs[i]+" "+Array.from({length:18},()=>glyphs[Math.floor(r()*glyphs.length)]).join(""));x=(Math.imul(x,1664525)+1013904223)>>>0;}$("output").textContent=lines.join("\n")+"\n∞";};
+$("run").onclick=()=>{let s=$("u").value,x=[...s].reduce((a,c)=>Math.imul(a^c.codePointAt(0),16777619)>>>0,2166136261),phases=["0","9","•","∴","⋅","↗","⇝","⟡","9"],glyphs="0099•∴⋅↗⇝⟡",lines=[];for(let i=0;i<9;i++){let r=random(x+i);lines.push(phases[i]+" "+Array.from({length:18},()=>glyphs[Math.floor(r()*glyphs.length)]).join(""));x=(Math.imul(x,1664525)+1013904223)>>>0;}$("output").textContent=lines.join("\n");};
 draw();$("run").click();
 </script></body></html>

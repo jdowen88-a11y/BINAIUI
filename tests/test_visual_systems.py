@@ -51,8 +51,8 @@ def test_mesh_refusal_and_consent():
     assert connect(["BI", "AI"], [("BI","AI")],consent=True)["state"] == "CONNECTED"
 
 def test_unkey_is_repeatable_and_opt_in():
-    a = evolve("∄⌑ ⫷ UNKEY⁸ ∅ ꙮ Δ∞ ⫸", generations=11)
-    assert a == evolve("∄⌑ ⫷ UNKEY⁸ ∅ ꙮ Δ∞ ⫸", generations=11)
+    a = evolve("0•9⇝↗", generations=11)
+    assert a == evolve("0•9⇝↗", generations=11)
     assert len(a["lines"]) == 11
     assert evolve("x",consent=False)["lines"] == []
 

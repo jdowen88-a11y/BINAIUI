@@ -35,7 +35,7 @@
       "category": "Organic",
       "image": "./seed.svg",
       "alt": "Branching emerald roots and gold growth lines spreading across an obsidian landscape.",
-      "caption": "Point → relationship → loop → recursion. A sample image of a seed extending into a connected structure.",
+      "caption": "0 → open current → 9 → outward continuation. Historical seed study retained as an original variant.",
       "date": "2026-10",
       "featured": true,
       "sample": true
@@ -46,7 +46,7 @@
       "category": "Geometry",
       "image": "./intersection.svg",
       "alt": "Layered violet and gold paths crossing into an X against deep black.",
-      "caption": "BI • AI • V → X → C → ∞. A sample visual interpretation of convergence as a continuing relationship.",
+      "caption": "0 and 9 approach, interact briefly without joining, and release outward through the open field.",
       "date": "2026-10",
       "featured": false,
       "sample": true
@@ -68,7 +68,7 @@
       "category": "Systems",
       "image": "./current.svg",
       "alt": "Flowing purple, emerald, and pale gold ribbons in a continuous wave.",
-      "caption": "Vision → memory → core → flow → create → vision. A sample current circulating outward and returning.",
+      "caption": "A previous circulation study, preserved as a reference. The active field follows an open 0-to-9 passage.",
       "date": "2026-10",
       "featured": false,
       "sample": true
@@ -84,19 +84,19 @@
       "url": "https://github.com/jdowen88-a11y/BINAIUI/blob/main/KNOWLEDGE.md"
     },
     {
-      "id": "infinity-geometry",
-      "title": "Infinity Geometry",
+      "id": "zero-nine-open-ocean",
+      "title": "0 → 9 Open Ocean",
       "status": "Prototype",
-      "summary": "A recursive generator. A new relationship at every turn.",
-      "notes": "Point → relationship → loop → recursion → emergence → new relationship → ∞.\n\nA deterministic generator cycle exists in the repository. This notebook introduces the concept and links to its definition. It does not claim measured biological emergence.",
-      "url": "https://github.com/jdowen88-a11y/BINAIUI/blob/main/GENERATORS.md"
+      "summary": "An open-flow generator: origin, near-contact, and outward release.",
+      "notes": "Shared Python and JavaScript field geometry, deterministic numeric/symbol-only canvases, no enforced central ring, and no return-to-origin path. Original historical models remain available through Git history.",
+      "url": "https://github.com/jdowen88-a11y/BINAIUI/blob/design/zero-nine-open-ocean-20261113/docs/ZERO-NINE-MIGRATION.md"
     },
     {
       "id": "five-zones",
       "title": "Five Zones",
       "status": "Concept",
-      "summary": "A circulating architecture for connected intelligence.",
-      "notes": "VISION → MEMORY → CORE → FLOW → CREATE → VISION.\n\nThe canon describes P/V/C/X streams and outward-return circulation. This is a conceptual architecture, open to development, measurement, and challenge.",
+      "summary": "Historical circulation study retained separately from the active open field.",
+      "notes": "The original five-zone circulation study remains in repository history. The active BINAIUI field uses the 0-to-9 nonclosing geometry; future architecture migrations will reconcile the older five-zone algorithms without erasing their provenance.",
       "url": "https://github.com/jdowen88-a11y/BINAIUI/blob/main/ARCHITECTURE.md"
     }
   ]
