@@ -57,7 +57,7 @@ for (const prefix of ['/', '/BINAIUI/']) {
       await expect(page.getByRole('dialog')).toBeVisible();
       const imageDownload=page.waitForEvent('download');
       await page.getByRole('button',{name:/Download image/}).click();
-      expect((await imageDownload).suggestedFilename()).toMatch(/^BINAIUI-.*\\.(svg|png|jpg|webp)$/);
+      expect((await imageDownload).suggestedFilename()).toMatch(/^BINAIUI-.*\.(svg|png|jpg|webp)$/);
     });
 
     test('field creates open-edge glyph art and exports a PNG', async ({ page }) => {
