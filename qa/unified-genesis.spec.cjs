@@ -32,11 +32,13 @@ for (const prefix of ['/', '/BINAIUI/']) {
       await page.goto(prefix+'#home');
       await expect(page.getByRole('heading', { name: 'The living GENESIS workspace' })).toBeVisible();
       await page.goto(prefix+'#roadmap');
-      await expect(page.locator('.gx-pr')).toHaveCount(3);
-      await expect(page.locator('#gx-pr-status-1')).toContainText('Open');
-      await expect(page.locator('#gx-pr-status-2')).toContainText('Draft');
-      await expect(page.locator('#gx-pr-status-3')).toContainText('Open');
-      await expect(page.locator('.gx-roadmap')).toContainText('none is committed to GitHub');
+      await expect(page.locator('.gx-pr')).toHaveCount(7);
+      for (const number of [1, 2, 3, 4, 5, 7]) {
+        await expect(page.locator('#gx-pr-status-'+number)).toContainText('Merged');
+      }
+      await expect(page.locator('#gx-pr-status-9')).toContainText('unmerged');
+      await expect(page.locator('.gx-roadmap')).toContainText('none of the ten original binaries is in GitHub');
+      await expect(page.locator('.gx-roadmap')).toContainText('2026-11-14');
     });
 
     test('field creates open-edge glyph art and exports a PNG', async ({ page }) => {
