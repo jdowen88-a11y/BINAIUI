@@ -1,6 +1,6 @@
 # BINAIUI Unified GENESIS Studio — integration release
 
-**Current code status (November 13, 2026): merged into `main` through [PR #5](https://github.com/jdowen88-a11y/BINAIUI/pull/5); not deployed through GitHub Pages and not an authenticated CMS. Original artwork binaries and physical iPhone acceptance remain outstanding in [issue #6](https://github.com/jdowen88-a11y/BINAIUI/issues/6).**
+**Verified publication (November 14, 2026): GitHub Pages enabled on `main` `/docs`, with the GitHub Pages deployment workflow passing and the homepage launching on an iPhone. This does not verify the entire Studio, importer, offline PWA update cycle, or artwork recovery. This is not an authenticated CMS. The ten original artwork binaries remain absent from GitHub; full physical iPhone acceptance remains tracked in [issue #6](https://github.com/jdowen88-a11y/BINAIUI/issues/6).**
 
 This integration retains the mobile-first website and existing local content editor from PR #1, preserves the separate draft batch importer and original-file backups from PR #2, and adapts the procedural field, AirX reference systems, and UNKEY concepts described in PR #3 into a single `#studio` route.
 
