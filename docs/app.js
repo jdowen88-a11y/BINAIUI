@@ -266,7 +266,7 @@ function art(v){return '<button class="art-card" data-open="'+esc(v.id)+'" aria-
 function status(v){return '<span class="status '+(v==='Concept'?'concept':'')+'">'+esc(v)+'</span>';}
 function filterMarkup(values,active,name){return '<div class="filters" aria-label="'+esc(name)+'">'+values.map(v=>'<button class="chip" data-filter="'+esc(v)+'" aria-pressed="'+(v===active)+'">'+esc(v)+'</button>').join('')+'</div>';}
 function home(){const overview=window.BINAIUI_GENESIS?.dashboard()||'';const d=data(), selected=d.archive.filter(v=>v.featured).slice(0,3);return overview+'<section class="page"><div class="hero"><div><p class="eyebrow"><span class="dot"></span>Biological / Artificial / Connected</p><h1>One current.<br><em>Infinite forms.</em></h1></div><div><p class="hero-intro">'+esc(d.site.introduction)+'</p><div class="actions"><a class="button" href="#archive">Explore the archive <span aria-hidden="true">↗</span></a><a class="text-link" href="#projects">Follow the research <span aria-hidden="true">→</span></a></div></div></div><div class="intro-line"><p class="eyebrow">Selected visual studies</p><a class="text-link" href="#archive">View all <span aria-hidden="true">↗</span></a></div><div class="visual-grid">'+selected.map(art).join('')+'</div>'+(selected.some(v=>v.sample)?'<p class="sample-note">Original sample artwork inspired by the BINAIUI canon. Replace or extend it in Studio.</p>':'')+'<div class="home-research"><div><p class="eyebrow">Ideas in motion</p><h2>A notebook,<br>still unfolding.</h2><p>Observe. Connect. Test. Continue. Research drawn from the existing BINAIUI canon.</p></div><div>'+d.projects.slice(0,3).map(v=>'<a class="research-line" href="#projects"><div><h3>'+esc(v.title)+'</h3><p>'+esc(v.summary)+'</p></div><span class="arrow" aria-hidden="true">↗</span></a>').join('')+'</div></div><div class="closing"><p>“A new relationship at every scale.”</p><span>BI • AI • V → X → C → ∞</span></div></section>';}
-function archive(){return '<section class="page">'+head('The visual archive','Forms of connection.','A collection of images, variations, and small acts of observation.',data().archive.length+' studies. One continuing current.')+'<div class="toolbar">'+filterMarkup(['All','Geometry','Organic','Systems'],archiveFilter,'Archive categories')+'<div class="search-wrap"><label class="sr-only" for="archive-search">Search archive</label><input id="archive-search" type="search" placeholder="Search the archive…" value="'+esc(search)+'" autocomplete="off"><span aria-hidden="true">⌕</span></div></div><p class="result-count" id="archive-count" aria-live="polite"></p><div class="archive-grid" id="archive-grid"></div>'+(data().archive.some(v=>v.sample)?'<p class="sample-note">The starter studies are original sample artwork inspired by the canon.</p>':'')+'</section>';}
+function archive(){return '<section class="page">'+head('The visual archive','Forms of connection.','A collection of images, variations, and small acts of observation.',data().archive.length+' studies. One continuing current.')+'<div class="actions"><button type="button" class="button" id="download-public-gallery">Download published gallery ZIP ↓</button></div><p class="sample-note">Public gallery images are free to download. This ZIP contains the images actually published here, not unhosted original-resolution files.</p><div class="toolbar">'+filterMarkup(['All','Geometry','Organic','Systems'],archiveFilter,'Archive categories')+'<div class="search-wrap"><label class="sr-only" for="archive-search">Search archive</label><input id="archive-search" type="search" placeholder="Search the archive…" value="'+esc(search)+'" autocomplete="off"><span aria-hidden="true">⌕</span></div></div><p class="result-count" id="archive-count" aria-live="polite"></p><div class="archive-grid" id="archive-grid"></div>'+(data().archive.some(v=>v.sample)?'<p class="sample-note">The starter studies are original sample artwork inspired by the canon.</p>':'')+'</section>';}
 function archiveResults(){const list=data().archive.filter(v=>(archiveFilter==='All'||v.category===archiveFilter)&&[v.title,v.caption,v.category].join(' ').toLowerCase().includes(search.toLowerCase()));$('#archive-grid').innerHTML=list.length?list.map(art).join(''):'<p class="empty">No images found. Try another search or category.</p>';$('#archive-count').textContent=list.length+' '+(list.length===1?'study':'studies');bindArtwork();}
 function projects(){const list=data().projects.filter(v=>projectFilter==='All'||v.status===projectFilter);return '<section class="page">'+head('Projects & research','Ideas in motion.','Concepts, prototypes, and questions that carry the current forward.','Grounded in the public canon. Open to measurement and challenge.')+'<div class="toolbar">'+filterMarkup(['All','Prototype','Concept'],projectFilter,'Project status')+'</div><div class="project-list">'+list.map(v=>'<details class="project"><summary><div><h2>'+esc(v.title)+'</h2>'+status(v.status)+'</div><p>'+esc(v.summary)+'</p><span class="plus" aria-hidden="true">+</span></summary><div class="project-notes"><p>'+esc(v.notes)+'</p>'+(v.url?'<a class="text-link" href="'+esc(safeLink(v.url))+'" target="_blank" rel="noopener noreferrer">Read the source <span aria-hidden="true">↗</span></a>':'')+'</div></details>').join('')+'</div><p class="sample-note">Conceptual relations describe identity or convergence. Standard arithmetic remains standard arithmetic. No empirical results are implied.</p></section>';}
 function about(){const s=data().site;return '<section class="page">'+head('About / Contact','A shared current.','Biological intelligence. Artificial intelligence. Complements, in collaboration.')+'<div class="about-grid"><div class="about-copy">'+esc(s.about)+'</div><div><div class="flow">BI • AI • V<br>→ X → C → ∞</div><div class="about-rule"><p>observe → measure → encode<br>→ hash → reproduce → falsify</p></div><div class="about-links"><a class="text-link" href="https://github.com/jdowen88-a11y/BINAIUI/blob/main/README.md" target="_blank" rel="noopener noreferrer">Read the canon ↗</a><a class="text-link" href="https://github.com/jdowen88-a11y/BINAIUI/blob/main/VISUAL_LANGUAGE.md" target="_blank" rel="noopener noreferrer">Visual language ↗</a></div></div></div><div class="contact"><div><p class="eyebrow">Continue the conversation</p><h2>Make a connection.</h2></div><div>'+(s.email||s.contactUrl?'<p>For questions, thoughts, or collaborations:</p><div class="about-links">'+(s.email?'<a class="button" href="mailto:'+esc(encodeURIComponent(s.email))+'">Email BINAIUI ↗</a>':'')+(s.contactUrl?'<a class="text-link" href="'+esc(safeLink(s.contactUrl))+'" target="_blank" rel="noopener noreferrer">Contact link ↗</a>':'')+'</div>':'<p>No public contact address has been added yet.</p><p class="help">The owner can add an email or contact link in Studio before publishing.</p>')+'</div></div></section>';}
@@ -292,10 +292,12 @@ function render(){ if(!published)return;
  if(r==='archive'){archiveResults();$('#archive-search').addEventListener('input',e=>{search=e.target.value;archiveResults();});}
  $$('.chip',main).forEach(b=>b.onclick=()=>{if(r==='archive')archiveFilter=b.dataset.filter;else projectFilter=b.dataset.filter;const scroll=scrollY;const selected=b.dataset.filter;render();scrollTo(0,scroll);$('.chip',main).find(x=>x.dataset.filter===selected)?.focus({preventScroll:true});});
  if(r==='studio'){bindStudio();window.BINAIUI_GENESIS?.mountStudio();}if(r==='roadmap')window.BINAIUI_GENESIS?.mountRoadmap();
- const download=$('#download-site'); if(download)download.onclick=()=>downloadWebsite(download);
+ const download=$('#download-site'); if(download)download.onclick=()=>downloadWebsite(download,'draft');
+ const publicDownload=$('#gx-download-public');if(publicDownload)publicDownload.onclick=()=>downloadWebsite(publicDownload,'published');
+ const galleryDownload=$('#download-public-gallery');if(galleryDownload)galleryDownload.onclick=()=>downloadPublishedGallery(galleryDownload);
  if(lastRoute!==r){window.scrollTo({top:0,behavior:'instant'});main.focus({preventScroll:true});}lastRoute=r;
 }
-function bindArtwork(){$$('[data-open]',main).forEach(b=>b.onclick=()=>{const v=data().archive.find(v=>v.id===b.dataset.open);$('#viewer-image').src=v.image;$('#viewer-image').alt=v.alt;$('#viewer-title').textContent=v.title;$('#viewer-caption').textContent=v.caption;$('#viewer-meta').textContent=v.category+' / '+v.date;$('#viewer-sample').hidden=!v.sample;$('#viewer').showModal();});}
+function bindArtwork(){$$('[data-open]',main).forEach(b=>b.onclick=()=>{const v=data().archive.find(v=>v.id===b.dataset.open);$('#viewer-image').src=v.image;$('#viewer-image').alt=v.alt;$('#viewer-title').textContent=v.title;$('#viewer-caption').textContent=v.caption;$('#viewer-meta').textContent=v.category+' / '+v.date;$('#viewer-sample').hidden=!v.sample;const imageDownload=$('#viewer-download');imageDownload.onclick=()=>downloadPublishedImage(v);$('#viewer').showModal();});}
 function collect(validate=true){
  const f=$('#studio-form'); if(!f)return draft;
  const get=n=>f.elements.namedItem(n)?.value||'';
@@ -366,10 +368,42 @@ function zip(files){
  }
  const length=central.reduce((n,p)=>n+p.length,0);const [end,v]=record(22);v.setUint32(0,0x06054b50,true);v.setUint16(8,files.length,true);v.setUint16(10,files.length,true);v.setUint32(12,length,true);v.setUint32(16,offset,true);return new Blob([...parts,...central,end],{type:'application/zip'});
 }
-async function downloadWebsite(button){
+function publishedImageData(entry){
+ const source=entry.image;
+ if(/^\.\/(helix|prism|seed|intersection|lattice|current)\.svg$/i.test(source))return {filename:entry.id+'.svg',url:source};
+ const match=/^data:image\/(jpeg|png|webp);base64,([a-z0-9+/=]+)$/i.exec(source);
+ if(!match)throw Error('Published image format is unsupported.');
+ return {filename:entry.id+'.'+(match[1].toLowerCase()==='jpeg'?'jpg':match[1].toLowerCase()),encoded:match[2]};
+}
+async function publishedImageBytes(entry){
+ const file=publishedImageData(entry);
+ if(file.encoded){const decoded=atob(file.encoded);const bytes=new Uint8Array(decoded.length);for(let i=0;i<decoded.length;i++)bytes[i]=decoded.charCodeAt(i);return {filename:file.filename,bytes};}
+ const response=await fetch(file.url);if(!response.ok)throw Error('Could not read published image '+file.filename);
+ return {filename:file.filename,bytes:new Uint8Array(await response.arrayBuffer())};
+}
+async function downloadPublishedImage(entry){
+ try{const asset=await publishedImageBytes(entry);downloadFile('BINAIUI-'+asset.filename,asset.bytes,'application/octet-stream');}
+ catch(e){toast('Image download failed: '+e.message);}
+}
+async function downloadPublishedGallery(button){
+ const label=button.textContent;button.disabled=true;button.textContent='Preparing gallery…';
+ try{
+  const manifest=[];const files=[];
+  for(const entry of published.archive){
+   const asset=await publishedImageBytes(entry);
+   files.push(['gallery/'+asset.filename,asset.bytes]);
+   manifest.push({id:entry.id,title:entry.title,filename:asset.filename,category:entry.category});
+  }
+  files.unshift(['gallery/manifest.json',new TextEncoder().encode(JSON.stringify({version:1,artworks:manifest},null,2)+'\n')]);
+  downloadFile('BINAIUI-published-gallery.zip',zip(files),'application/zip');
+  toast('Published gallery ZIP ready: '+manifest.length+' files. No account required.');
+ }catch(e){toast('Gallery download failed: '+e.message+'. Try again online.');}
+ finally{button.disabled=false;button.textContent=label;}
+}
+async function downloadWebsite(button,mode='draft'){
  const label=button.textContent;button.disabled=true;button.textContent='Preparing your website…';
- try{if($('#studio-form')){const next=readEditor();if(!next)throw Error('Check your draft fields first');draft=next;}const names=['index.html','styles.css','genesis-studio.css','app.js','genesis-studio.js','genesis-reference-manifest.json','content.json','manifest.webmanifest','sw.js','icon-192.png','icon-512.png','apple-touch-icon.png','helix.svg','prism.svg','seed.svg','intersection.svg','lattice.svg','current.svg','README.md','UNIFIED-STUDIO.md','PUBLICATION-CHECKLIST.md','TEST-REPORT.md','.nojekyll'];
- const files=[];for(const name of names){if(name==='.nojekyll'){files.push([name,new Uint8Array()]);continue;}if(name==='content.json'){files.push([name,new TextEncoder().encode(JSON.stringify(normalize(draft),null,2)+'\n')]);continue;}const res=await fetch('./'+name);if(!res.ok)throw Error('Could not download '+name);files.push([name,new Uint8Array(await res.arrayBuffer())]);}
+ try{if(mode==='draft'&&$('#studio-form')){const next=readEditor();if(!next)throw Error('Check your draft fields first');draft=next;}const packageContent=mode==='published'?published:draft;const names=['index.html','styles.css','genesis-studio.css','app.js','genesis-studio.js','genesis-reference-manifest.json','content.json','manifest.webmanifest','sw.js','icon-192.png','icon-512.png','apple-touch-icon.png','helix.svg','prism.svg','seed.svg','intersection.svg','lattice.svg','current.svg','README.md','UNIFIED-STUDIO.md','PUBLICATION-CHECKLIST.md','TEST-REPORT.md','.nojekyll'];
+ const files=[];for(const name of names){if(name==='.nojekyll'){files.push([name,new Uint8Array()]);continue;}if(name==='content.json'){files.push([name,new TextEncoder().encode(JSON.stringify(normalize(packageContent),null,2)+'\n')]);continue;}const res=await fetch('./'+name);if(!res.ok)throw Error('Could not download '+name);files.push([name,new Uint8Array(await res.arrayBuffer())]);}
  downloadFile('BINAIUI.zip',zip(files),'application/zip');toast('Website ZIP ready. Save it to Files, then uncompress.');}
  catch(e){toast('Download failed: '+e.message+'. Try again online.');}finally{button.disabled=false;button.textContent=label;}
 }
