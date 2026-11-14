@@ -2,10 +2,18 @@
 from __future__ import annotations
 
 from hashlib import sha256
+from decimal import Decimal, ROUND_HALF_UP
 import json
 
 SYMBOLS = "09"
 PALETTE = ("#df4dff", "#8f58f2", "#19aeff", "#36f3ff", "#f6b54f", "#ec49ac")
+
+_DECIMAL_STEP = Decimal("0.0000001")
+
+
+def _fixed7(value: float) -> float:
+    """Match JavaScript's toFixed(7) for exact IEEE-754 values, including half ties."""
+    return float(Decimal.from_float(value).quantize(_DECIMAL_STEP, rounding=ROUND_HALF_UP))
 
 
 class Random32:
@@ -41,8 +49,8 @@ def ocean_field(seed: int = 9, *, pairs: int = 36, samples: int = 97) -> dict:
                 approach = abs(2 * t - 1)
                 separation = gap + flare * approach * approach
                 lateral = bend * t * (1 - t) * (2 * t - 1) * 8
-                x = round(1.25 * t, 7)
-                y = round(center + side * separation + lateral + lean * t, 7)
+                x = _fixed7(1.25 * t)
+                y = _fixed7(center + side * separation + lateral + lean * t)
                 points.append([x, y])
             strands.append({
                 "pair": pair,
