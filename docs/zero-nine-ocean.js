@@ -28,7 +28,7 @@ function verify(field){
   outward_exit:strands.every(s=>s.points[s.points.length-1][0]>s.points[0][0]),
   curved_release:strands.some(s=>s.points.some((p,i)=>i>0&&p[0]<s.points[i-1][0])),
   no_endpoint_closures:strands.every(s=>JSON.stringify(s.points[0])!==JSON.stringify(s.points[s.points.length-1])),
-  numeric_symbol_field:![...field.symbol_set].some(c=>/[a-zA-Z8∞]/.test(c)||c.charCodeAt(0)<32),
+  numeric_symbol_field:[...field.symbol_set].every(c=>SYMBOLS.includes(c)&&c.charCodeAt(0)>=32),
   start_zero_release_nine:strands.every(s=>s.origin==='0'&&s.release==='9'),
   encounter_gap_not_joined:strands.every((s,i)=>i%2||Math.abs(s.points[Math.floor(s.points.length/2)][1]-strands[i+1].points[Math.floor(s.points.length/2)][1])>.001)
  };
@@ -49,7 +49,7 @@ function draw(canvas,seed=9,options={}){
   g.save();g.beginPath();pts.forEach(([x,y],i)=>{const X=x*w,Y=y*h;if(!i)g.moveTo(X,Y);else g.lineTo(X,Y);});
   g.strokeStyle=strand.color;g.globalAlpha=.16;g.lineWidth=5.4*ratio;g.shadowBlur=10*ratio;g.shadowColor=strand.color;g.stroke();
   g.globalAlpha=.61;g.lineWidth=.75*ratio;g.shadowBlur=0;g.stroke();g.restore();
-  for(let j=9;j<pts.length-8;j+=13){
+  for(let j=9;j<pts.length-9;j+=13){
    const point=pts[j],ch=SYMBOLS[Math.floor(rng()*SYMBOLS.length)];g.fillStyle=strand.color;
    g.globalAlpha=.49+.44*rng();g.font=(9+rng()*9)*ratio+'px monospace';g.fillText(ch,point[0]*w,point[1]*h);
   }

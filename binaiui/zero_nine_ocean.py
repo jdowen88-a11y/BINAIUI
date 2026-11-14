@@ -56,7 +56,7 @@ def verify_field(field: dict) -> dict:
         "outward_exit": all(s["points"][-1][0] > s["points"][0][0] for s in strands),
         "curved_release": any(any(b[0] < a[0] for a,b in zip(s["points"], s["points"][1:])) for s in strands),
         "no_endpoint_closures": all(s["points"][0] != s["points"][-1] for s in strands),
-        "numeric_symbol_field": not any(c.isalpha() or c in "8∞" or ord(c)<32 for c in field["symbol_set"]),
+        "numeric_symbol_field": set(field["symbol_set"]).issubset(set(SYMBOLS)) and all(ord(c)>=32 for c in field["symbol_set"]),
         "start_zero_release_nine": all(s["origin"] == "0" and s["release"] == "9" for s in strands),
         "encounter_gap_not_joined": all(abs(strands[2*i]["points"][len(strands[2*i]["points"])//2][1] -
             strands[2*i+1]["points"][len(strands[2*i+1]["points"])//2][1]) > .001 for i in range(len(pairs)))
