@@ -2,11 +2,10 @@
 from __future__ import annotations
 from hashlib import sha256
 
-GLYPHS = tuple("∄⌑⫷⫸∅ꙮΔ∞◇⟐◌↶☷∑λπ")
-GEOLOGY = ("ACCRETE", "STRATIFY", "SUBDUCT", "FOLD", "OVERTURN",
-           "SHEAR", "METAMORPHOSE", "ERODE", "RECRYSTALLIZE")
+GLYPHS = tuple("0099•∴⋅↗⇝⟡")
+PHASES = ("0", "9", "•", "∴", "⋅", "↗", "⇝", "⟡", "9")
 
-def evolve(seed: str, *, generations: int = 8, consent: bool = True) -> dict:
+def evolve(seed: str, *, generations: int = 9, consent: bool = True) -> dict:
     if not isinstance(seed, str) or not 1 <= len(seed) <= 4096:
         raise ValueError("seed must be 1..4096 characters")
     if type(generations) is not int or not 0 <= generations <= 128:
@@ -20,7 +19,7 @@ def evolve(seed: str, *, generations: int = 8, consent: bool = True) -> dict:
     for index in range(generations):
         state = sha256(state + index.to_bytes(4, "big")).digest()
         glyphs = "".join(GLYPHS[b % len(GLYPHS)] for b in state[:12])
-        lines.append({"generation": index + 1, "verb": GEOLOGY[index % len(GEOLOGY)],
+        lines.append({"generation": index + 1, "verb": PHASES[index] if index < len(PHASES) else str(index + 1),
                       "pattern": glyphs})
     return {"state": "EVOLVED", "lines": lines, "persisted": False,
             "seed_sha256": sha256(seed.encode("utf-8")).hexdigest()}

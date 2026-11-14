@@ -1,7 +1,7 @@
 'use strict';
 const PREFIX = 'binaiui-' + encodeURIComponent(self.registration.scope) + '-';
-const CACHE = PREFIX + '2026-11-04-unified-v3';
-const ASSETS = ['./','./index.html','./styles.css','./genesis-studio.css','./app.js','./genesis-studio.js','./genesis-reference-manifest.json','./content.json','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png','./helix.svg','./prism.svg','./seed.svg','./intersection.svg','./lattice.svg','./current.svg','./README.md','./UNIFIED-STUDIO.md','./PUBLICATION-CHECKLIST.md','./TEST-REPORT.md','./sw.js'];
+const CACHE = PREFIX + '2026-11-13-zero-nine-v2';
+const ASSETS = ['./','./index.html','./styles.css','./genesis-studio.css','./app.js','./genesis-studio.js','./zero-nine-ocean.js','./zero-nine-field.html','./genesis-reference-manifest.json','./content.json','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png','./helix.svg','./prism.svg','./seed.svg','./intersection.svg','./lattice.svg','./current.svg','./README.md','./UNIFIED-STUDIO.md','./PUBLICATION-CHECKLIST.md','./TEST-REPORT.md','./sw.js'];
 const CONTENT_PATH = new URL('./content.json', self.registration.scope).pathname;
 self.addEventListener('install', event => {
  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));

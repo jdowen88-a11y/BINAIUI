@@ -52,7 +52,7 @@ for (const prefix of ['/', '/BINAIUI/']) {
       expect(info.height).toBeGreaterThan(100);
       expect(info.opaque).toBe(true);
       expect(info.png).toBe(true);
-      await page.locator('#gx-seed').fill('808');
+      await page.locator('#gx-seed').fill('9');
       await page.getByRole('button',{name:'Generate field'}).click();
       const download=page.waitForEvent('download');
       await page.getByRole('button',{name:/Save PNG/}).click();
@@ -72,8 +72,9 @@ for (const prefix of ['/', '/BINAIUI/']) {
       await expect(page.locator('#gx-active')).toContainText('AIRX-05');
       await page.getByRole('tab',{name:'UNKEY'}).click();
       const output=page.locator('#gx-unkey-output');
-      await expect(output).toContainText('ACCRETE');
-      await expect(output).toContainText('RECRYSTALLIZE');
+      const nineLines=(await output.textContent()).trim().split('\n');
+      expect(nineLines).toHaveLength(9);
+      expect(nineLines.every(line=>/^[09•∴⋅↗⇝⟡ ]+$/.test(line))).toBe(true);
     });
 
     test('draft importer, local-original inspection and backups stay available', async ({ page }) => {

@@ -98,3 +98,7 @@ code rain
 ## Structure rule
 
 The image can contain multiple scales at once: cell, body, landscape, planet, network, star system, galaxy. Infinite zoom means the next scale should remain connected to the same current instead of becoming a disconnected scene.
+
+## Updated 0 → 9 field rule — 2026-11-13
+
+Active generators must draw 0-to-9 open paths with distributed momentary near-contact followed by divergence. The art canvas uses numeric and symbol glyphs only. No closed figure-eight, return cycle, frame, central gate, or alphabetic field glyphs. Historical forms remain preserved by Git history.
