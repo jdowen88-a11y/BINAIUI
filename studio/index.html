@@ -19,7 +19,7 @@ small{display:block;color:#bba9df}label{display:flex;gap:8px;align-items:center}
 <h1>GENESIS OPEN FIELD STUDIO</h1>
 <p>Ten indexed reference systems • six AirX concepts • one procedural cosmic lattice • UNKEY. Mobile-friendly and independent of external services.</p>
 <section class="panel"><canvas id="c" width="960" height="540" aria-label="Generative lattice composed of letters, numbers and energetic filaments" role="img"></canvas>
-<div class="controls"><label>Seed <input id="seed" type="number" value="808"></label><button id="make">Generate</button><button id="save">Save PNG</button></div>
+<div class="controls"><label>Seed <input id="seed" type="number" value="9"></label><button id="make">Generate</button><button id="save">Save PNG</button></div>
 <small id="active">GENESIS-01 • cosmic neural lattice</small>
 </section>
 <h2>Choose a system</h2><section id="refs" class="grid"></section>
@@ -34,13 +34,13 @@ const refs=[
 ["AIRX-06","Eight-Node Network","airx_radial"],["MESH-01","Crowned Trident Mesh","crowned_mesh"],
 ["CARRIER-01","0000 Hz Carrier Node","carrier_api"],["UNKEY-01","UNKEY Key Release","unkey_field"]
 ];
-const $=s=>document.getElementById(s);let seed=808;
+const $=s=>document.getElementById(s);let seed=9;
 function random(s){let x=(s>>>0)||1;return ()=>((x=(Math.imul(x,1664525)+1013904223)>>>0)/4294967296);}
 function draw(){window.BINAIUI_ZERO_NINE.draw($("c"),seed);}
 
 for(const [id,title,engine] of refs){
 const b=document.createElement("button");b.className="tile";b.type="button";
-b.textContent=id+" — "+title;b.onclick=()=>{$("active").textContent=id+" • "+title+" • "+engine;seed=id.split("").reduce((n,c)=>n+c.charCodeAt(0),808);$("seed").value=seed;draw();document.querySelectorAll(".tile").forEach(e=>e.setAttribute("aria-pressed","false"));b.setAttribute("aria-pressed","true");};
+b.textContent=id+" — "+title;b.onclick=()=>{$("active").textContent=id+" • "+title+" • "+engine;seed=id.split("").reduce((n,c)=>n+c.charCodeAt(0),9);$("seed").value=seed;draw();document.querySelectorAll(".tile").forEach(e=>e.setAttribute("aria-pressed","false"));b.setAttribute("aria-pressed","true");};
 $("refs").append(b);
 }
 $("make").onclick=()=>{seed=Number($("seed").value)||0;draw();};

@@ -57,9 +57,9 @@ def test_unkey_is_repeatable_and_opt_in():
     assert evolve("x",consent=False)["lines"] == []
 
 def test_genesis_svg_determinism():
-    a = generate_svg(seed=808, width=480, height=320, streams=8, symbols=50)
-    assert a == generate_svg(seed=808, width=480, height=320, streams=8, symbols=50)
-    assert fingerprint(a) != fingerprint(generate_svg(seed=809, width=480, height=320, streams=8, symbols=50))
+    a = generate_svg(seed=9, width=480, height=320, streams=8, symbols=50)
+    assert a == generate_svg(seed=9, width=480, height=320, streams=8, symbols=50)
+    assert fingerprint(a) != fingerprint(generate_svg(seed=10, width=480, height=320, streams=8, symbols=50))
     assert a.startswith("<svg") and a.endswith("</svg>")
     assert "<text " in a and "filter=" in a
 
