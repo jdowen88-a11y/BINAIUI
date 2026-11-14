@@ -1,7 +1,7 @@
 """0 -> 9 open-ocean geometry. No return to origin."""
 from __future__ import annotations
 from hashlib import sha256
-from math import sin, pi
+from math import sin, cos, exp, pi
 import json
 
 SYMBOLS = "0099•∴⋅↗⇝⟡"
@@ -37,8 +37,10 @@ def ocean_field(seed: int = 9, *, pairs: int = 36, samples: int = 97) -> dict:
                 approach = abs(2 * t - 1)
                 separation = gap + flare * approach ** 1.45
                 wave = amplitude * sin(2 * pi * t * 1.35 + phase) * (.3 + .7 * approach)
-                points.append([round(-.24 + 1.48 * t, 7),
-                               round(center + side * separation + wave + lean * (t - .5), 7)])
+                pulse = exp(-((t - .5) / .18)**2)
+                turn = 2.2 * pi * (t - .5) + phase
+                points.append([round(-.24 + 1.48 * t + .22 * pulse * cos(turn), 7),
+                               round(center + side * separation + .15 * pulse * sin(turn) + wave + lean * (t - .5), 7)])
             strands.append({"pair": pair, "side": side,
                 "color": PALETTE[(pair * 2 + (side + 1) // 2) % len(PALETTE)],
                 "origin": "0", "release": "9", "points": points})
@@ -51,7 +53,8 @@ def verify_field(field: dict) -> dict:
     checks = {
         "paired_currents": len(strands) == 2 * len(pairs),
         "all_open_edges": all(s["points"][0][0] < 0 and s["points"][-1][0] > 1 for s in strands),
-        "all_forward": all(all(b[0] > a[0] for a,b in zip(s["points"], s["points"][1:])) for s in strands),
+        "outward_exit": all(s["points"][-1][0] > s["points"][0][0] for s in strands),
+        "curved_release": any(any(b[0] < a[0] for a,b in zip(s["points"], s["points"][1:])) for s in strands),
         "no_endpoint_closures": all(s["points"][0] != s["points"][-1] for s in strands),
         "numeric_symbol_field": not any(c.isalpha() or c in "8∞" or ord(c)<32 for c in field["symbol_set"]),
         "start_zero_release_nine": all(s["origin"] == "0" and s["release"] == "9" for s in strands),

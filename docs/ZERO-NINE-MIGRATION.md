@@ -15,3 +15,7 @@ This is an additive, owner-reviewable migration from closed return-cycle drawing
 The original historical materials and unmodified modules remain in Git commit history for preservation. Refactoring the other Python cycles, symbolic canon, original-file importer, repository inventory and related projects is a *separate review stage*; do not claim this first stage has replaced those systems.
 
 No automatic deployment, archive deletion, private-repository change, or live external action is part of this branch.
+
+### Near-contact curvature
+
+The strand pairs now curve and briefly reverse direction near their closest approach before releasing outward. They never join into a closed connection and end beyond the opposite viewport edge. Both engines share the same numerical parameterization.

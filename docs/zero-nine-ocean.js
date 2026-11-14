@@ -12,7 +12,8 @@ function geometry(seed=9,pairs=36,samples=97){
    const points=[];
    for(let j=0;j<samples;j++){
     const t=j/(samples-1),approach=Math.abs(2*t-1),separation=gap+flare*Math.pow(approach,1.45),wave=amplitude*Math.sin(2*Math.PI*t*1.35+phase)*(.3+.7*approach);
-    points.push([Number((-.24+1.48*t).toFixed(7)),Number((center+side*separation+wave+lean*(t-.5)).toFixed(7))]);
+    const pulse=Math.exp(-Math.pow((t-.5)/.18,2)),turn=2.2*Math.PI*(t-.5)+phase;
+    points.push([Number((-.24+1.48*t+.22*pulse*Math.cos(turn)).toFixed(7)),Number((center+side*separation+.15*pulse*Math.sin(turn)+wave+lean*(t-.5)).toFixed(7))]);
    }
    strands.push({pair:i,side,color:PALETTE[(i*2+(side+1)/2)%PALETTE.length],origin:'0',release:'9',points});
   }
@@ -24,7 +25,8 @@ function verify(field){
  const checks={
   paired_currents:strands.length%2===0,
   all_open_edges:strands.every(s=>s.points[0][0]<0&&s.points[s.points.length-1][0]>1),
-  all_forward:strands.every(s=>s.points.every((p,i)=>i===0||p[0]>s.points[i-1][0])),
+  outward_exit:strands.every(s=>s.points[s.points.length-1][0]>s.points[0][0]),
+  curved_release:strands.some(s=>s.points.some((p,i)=>i>0&&p[0]<s.points[i-1][0])),
   no_endpoint_closures:strands.every(s=>JSON.stringify(s.points[0])!==JSON.stringify(s.points[s.points.length-1])),
   numeric_symbol_field:![...field.symbol_set].some(c=>/[a-zA-Z8∞]/.test(c)||c.charCodeAt(0)<32),
   start_zero_release_nine:strands.every(s=>s.origin==='0'&&s.release==='9'),
