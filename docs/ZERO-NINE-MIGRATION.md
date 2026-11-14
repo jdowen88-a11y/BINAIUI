@@ -2,7 +2,7 @@
 
 This is an additive, owner-reviewable migration from closed return-cycle drawings to open paths.
 
-**Current creative rule:** 0 originates, the paired streams approach without bonding, deflect, then continue outward as 9. The symbol field uses numeric glyphs and mathematical symbols only. No eight-shaped closed circuit, enforced single portal or return-to-source arrow is drawn. This is a field model, not a physical device controller.
+**Current creative rule:** 0 originates, the paired streams approach without bonding, deflect, then continue outward as 9. The symbol field uses numeric glyphs and mathematical symbols only. Each point has a strictly larger forward coordinate than the previous point. No backward motion, no sine/cosine, no eight-shaped closed circuit or return-to-source arrow is drawn. This is a field model, not a physical device controller.
 
 ## Shared implementation
 
@@ -16,6 +16,6 @@ The original historical materials and unmodified modules remain in Git commit hi
 
 No automatic deployment, archive deletion, private-repository change, or live external action is part of this branch.
 
-### Near-contact curvature
+### Forward-only correction (09.2)
 
-The strand pairs now curve and briefly reverse direction near their closest approach before releasing outward. They never join into a closed connection and end beyond the opposite viewport edge. Both engines share the same numerical parameterization.
+The earlier draft accidentally required a backward step in `curved_release` and used sine and cosine to generate a reversing curl. Both implementations have been replaced. Every sampled path begins at x=0, increases at every step, exits the viewport, and emits an alternating 090909 pattern. Lateral deflection occurs without longitudinal reversal. An injected zero or negative x step fails the integrity test. The independent preview no longer offers a previous button.
