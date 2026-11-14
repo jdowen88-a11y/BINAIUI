@@ -41,6 +41,25 @@ for (const prefix of ['/', '/BINAIUI/']) {
       await expect(page.locator('.gx-roadmap')).toContainText('2026-11-14');
     });
 
+    test('public visitors can download website and published gallery without editor or login', async ({ page }) => {
+      await page.goto(prefix+'#home');
+      const websiteDownload=page.waitForEvent('download');
+      await page.getByRole('button',{name:/Download public website ZIP/}).click();
+      const website=await websiteDownload;
+      expect(website.suggestedFilename()).toBe('BINAIUI.zip');
+
+      await page.goto(prefix+'#archive');
+      const galleryDownload=page.waitForEvent('download');
+      await page.getByRole('button',{name:/Download published gallery ZIP/}).click();
+      expect((await galleryDownload).suggestedFilename()).toBe('BINAIUI-published-gallery.zip');
+
+      await page.locator('.art-card').first().click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+      const imageDownload=page.waitForEvent('download');
+      await page.getByRole('button',{name:/Download image/}).click();
+      expect((await imageDownload).suggestedFilename()).toMatch(/^BINAIUI-.*\.(svg|png|jpg|webp)$/);
+    });
+
     test('field creates open-edge glyph art and exports a PNG', async ({ page }) => {
       await page.goto(prefix+'#studio');
       const canvas=page.locator('#gx-canvas');
