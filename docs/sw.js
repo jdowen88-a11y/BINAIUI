@@ -1,6 +1,6 @@
 'use strict';
 const PREFIX = 'binaiui-' + encodeURIComponent(self.registration.scope) + '-';
-const CACHE = PREFIX + '20261114genesisforwardv5';
+const CACHE = PREFIX + '20261114genesisfullspectrumv6';
 const ASSETS = ['./','./index.html','./styles.css','./genesis-studio.css','./app.js','./genesis-studio.js','./genesisfield.js','./genesis-reference-manifest.json','./content.json','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png','./helix.svg','./prism.svg','./seed.svg','./intersection.svg','./lattice.svg','./current.svg','./README.md','./UNIFIED-STUDIO.md','./PUBLICATION-CHECKLIST.md','./TEST-REPORT.md','./sw.js'];
 const CONTENT_PATH = new URL('./content.json', self.registration.scope).pathname;
 self.addEventListener('install', event => {
