@@ -85,7 +85,10 @@ for (const prefix of ['/', '/BINAIUI/']) {
           }
         }
         return {geometry:canvas.dataset.geometry,direction:canvas.dataset.direction,
-          K:canvas.dataset.curvature,palette:mod.palette,gaps,speed,metrics,
+          K:canvas.dataset.curvature,palette:mod.palette,spectrum:mod.spectrum,
+          spectralStart:mod.spectralColor(0),spectralEnd:mod.spectralColor(1),
+          spectrumTag:canvas.dataset.spectrum,streamsTag:canvas.dataset.streams,
+          crossbarsTag:canvas.dataset.crossbars,gaps,speed,metrics,
           low:mod.remapRGB(10,10,10),mid:mod.remapRGB(120,120,120),
           high:mod.remapRGB(250,250,250)};
       });
@@ -93,12 +96,23 @@ for (const prefix of ['/', '/BINAIUI/']) {
       expect(info.direction).toBe('forwardOnly');
       expect(info.K).toBe('1');
       expect(info.palette).toEqual({void:'#000000',bio:'#19FF33',ultraviolet:'#CC00FF'});
+      expect(Object.keys(info.spectrum)).toHaveLength(16);
+      expect(info.spectrum.red).toBe('#FF3348');
+      expect(info.spectrum.green).toBe('#19FF33');
+      expect(info.spectrum.cyan).toBe('#00F6FF');
+      expect(info.spectrum.violet).toBe('#CC00FF');
+      expect(info.spectrum.rose).toBe('#FF54A6');
+      expect(info.spectralStart).toBe('hsl(0, 100%, 60%)');
+      expect(info.spectralEnd).toBe('hsl(315, 100%, 60%)');
+      expect(info.spectrumTag).toBe('fullVisible');
+      expect(info.streamsTag).toBe('2');
+      expect(info.crossbarsTag).toBe('none');
       expect(info.gaps.every(Boolean)).toBe(true);
       expect(info.speed.every(Boolean)).toBe(true);
       expect(info.metrics.every(v=>v>0&&Number.isFinite(v))).toBe(true);
-      expect(info.low).toEqual([0,0,0,255]);
-      expect(info.mid).toEqual([25,255,51,255]);
-      expect(info.high).toEqual([204,0,255,255]);
+      expect(info.low).toEqual([10,10,10,255]);
+      expect(info.mid).toEqual([120,120,120,255]);
+      expect(info.high).toEqual([250,250,250,255]);
       await page.locator('#gx-curvature').fill('4');
       await page.locator('#gx-curvature').dispatchEvent('change');
       await expect(page.locator('#gx-canvas')).toHaveAttribute('data-curvature','4');
