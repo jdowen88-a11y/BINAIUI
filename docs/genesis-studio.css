@@ -107,7 +107,7 @@ input::placeholder,textarea::placeholder{color:#8f83a9}
 @media(max-width:370px){.gx-tabs button{padding-inline:11px;font-size:12px}.gx-quicklinks .gx-action{width:100%}.gx-statstrip b{font-size:25px}.gx-backupstrip b{font-size:22px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 
-/* K-negative twin stream triad preview: non-destructive display overrides. */
+/* GENESIS full spectrum twin stream display overrides. */
 :root{--paper:#000000;--ink:#f5ecff;--muted:#cba6da;--line:#582061;--accent:#CC00FF;--light:#160019;--green:#19FF33}
 html{background:#000000;color-scheme:dark}
 body{background:#000000;color:var(--ink)}
