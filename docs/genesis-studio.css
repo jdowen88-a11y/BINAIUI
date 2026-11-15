@@ -106,3 +106,19 @@ input::placeholder,textarea::placeholder{color:#8f83a9}
 @media(max-width:760px){.gx-statstrip{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.gx-reference-list,.gx-airx-list,.gx-roadsections{grid-template-columns:1fr}.gx-dashboard{padding:40px 5% 28px}.gx-dashboard h2{font-size:clamp(40px,10vw,61px)}.gx-pr{flex-direction:column}.gx-pr-actions{flex-direction:row;align-items:center;justify-content:space-between;text-align:left}.gx-roadmap{padding-top:35px}.gx-tabs{margin:0 -5vw;padding:10px 5vw}.gx-canvas-bleed canvas{height:clamp(330px,62svh,570px)}.gx-field-tools>*{flex:1 0 auto}.gx-field-tools label{max-width:135px}.gx-classic-inner .studio-actions{gap:9px}}
 @media(max-width:370px){.gx-tabs button{padding-inline:11px;font-size:12px}.gx-quicklinks .gx-action{width:100%}.gx-statstrip b{font-size:25px}.gx-backupstrip b{font-size:22px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* K-negative twin stream triad preview: non-destructive display overrides. */
+:root{--paper:#000000;--ink:#f5ecff;--muted:#cba6da;--line:#582061;--accent:#CC00FF;--light:#160019;--green:#19FF33}
+html{background:#000000;color-scheme:dark}
+body{background:#000000;color:var(--ink)}
+.header,.footer,.mobile-nav{background:#000000;border-color:#4d195d}
+.gx-dashboard{background:linear-gradient(115deg,#000000,#180019)}
+.gx-canvas-bleed{background:#000000}
+.brand-symbol{background:#19FF33;color:#000000}
+.brand-dot,.eyebrow .dot{background:#CC00FF}
+.gx-kicker,.gx-small a,.gx-roadmap a,.gx-reference a,.desktop-nav a[aria-current],.header-install,.footer a{color:#19FF33}
+.gx-active,.gx-honesty{color:#CC00FF}
+.button,.gx-action{background:#19FF33;border-color:#19FF33;color:#000000}
+.button:hover,.gx-action:hover{background:#CC00FF;border-color:#CC00FF;color:#000000}
+a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,summary:focus-visible{outline-color:#19FF33}
+#gx-curvature{max-width:110px;border:1px solid #19FF33;background:#000000!important;color:#19FF33!important}
