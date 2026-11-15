@@ -1,4 +1,6 @@
 const { test, expect } = require('@playwright/test');
+const { readFile } = require('node:fs/promises');
+const { inflateSync } = require('node:zlib');
 
 for (const prefix of ['/', '/BINAIUI/']) {
   test.describe('Unified GENESIS Studio at '+prefix, () => {
@@ -124,24 +126,71 @@ for (const prefix of ['/', '/BINAIUI/']) {
       await expect(page.locator('#gx-curvature-desc')).toContainText('non Euclidean');
     });
 
-    test('field creates open-edge glyph art and exports a PNG', async ({ page }) => {
+    test('field renders Display P3 and exports a profile verified PNG', async ({ page }) => {
       await page.goto(prefix+'#studio');
       const canvas=page.locator('#gx-canvas');
       await expect(canvas).toBeVisible();
       await expect.poll(async ()=>canvas.evaluate(el=>el.getContext('2d').getImageData(0,0,1,1).data[3])).toBe(255);
       const info=await canvas.evaluate(el => {
         const data=el.getContext('2d').getImageData(0,0,el.width,el.height).data;
-        return {width:el.width,height:el.height,opaque:data[3]===255,png:el.toDataURL('image/png').startsWith('data:image/png;base64,')};
+        return {width:el.width,height:el.height,opaque:data[3]===255,png:el.toDataURL('image/png').startsWith('data:image/png;base64,'),
+          space:el.getContext('2d').getContextAttributes().colorSpace,tag:el.dataset.colorSpace};
       });
       expect(info.width).toBeGreaterThan(100);
       expect(info.height).toBeGreaterThan(100);
       expect(info.opaque).toBe(true);
       expect(info.png).toBe(true);
+      expect(info.space).toBe('display-p3');
+      expect(info.tag).toBe('display-p3');
       await page.locator('#gx-seed').fill('808');
       await page.getByRole('button',{name:'Generate field'}).click();
       const download=page.waitForEvent('download');
       await page.getByRole('button',{name:/Save PNG/}).click();
-      expect((await download).suggestedFilename()).toContain('.png');
+      const saved=await download;
+      expect(saved.suggestedFilename()).toMatch(/DisplayP3\\.png$/);
+      await expect(page.locator('#gx-color-status')).toContainText('Verified Display P3 PNG exported');
+      const bytes=await readFile(await saved.path());
+      expect(bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))).toBe(true);
+      let offset=8,profile=null,declaredSRGB=false;
+      while(offset+12<=bytes.length){
+        const size=bytes.readUInt32BE(offset),kind=bytes.toString('ascii',offset+4,offset+8);
+        expect(offset+12+size).toBeLessThanOrEqual(bytes.length);
+        if(kind==='sRGB')declaredSRGB=true;
+        if(kind==='iCCP'){
+          const payload=bytes.subarray(offset+8,offset+8+size);
+          const nameEnd=payload.indexOf(0);
+          expect(nameEnd).toBeGreaterThan(0);
+          expect(payload[nameEnd+1]).toBe(0);
+          profile=inflateSync(payload.subarray(nameEnd+2));
+        }
+        offset+=12+size;
+        if(kind==='IEND')break;
+      }
+      expect(declaredSRGB).toBe(false);
+      expect(profile).not.toBeNull();
+      expect(profile.toString('ascii',36,40)).toBe('acsp');
+      const tag=(name)=>{
+        const count=profile.readUInt32BE(128);
+        for(let i=0;i<count;i++){
+          const directory=132+i*12;
+          if(profile.toString('ascii',directory,directory+4)===name){
+            const start=profile.readUInt32BE(directory+4);
+            return profile.readInt32BE(start+8)/65536;
+          }
+        }
+        throw Error('Missing profile tag: '+name);
+      };
+      expect(tag('rXYZ')).toBeGreaterThan(0.48);
+      expect(tag('gXYZ')).toBeLessThan(0.34);
+      expect(tag('bXYZ')).toBeGreaterThan(0.12);
+    });
+
+    test('declines sRGB fallback rather than mislabelling a PNG', async ({ page }) => {
+      await page.goto(prefix+'#studio');
+      await page.locator('#gx-canvas').evaluate(el=>{el.dataset.colorSpace='srgb';});
+      await page.getByRole('button',{name:/Save PNG/}).click();
+      await expect(page.locator('#gx-color-status')).toContainText('Export stopped');
+      await expect(page.locator('#gx-color-status')).toContainText('No sRGB substitute was saved');
     });
 
     test('manifest-backed references, AirX selection and UNKEY work', async ({ page }) => {
