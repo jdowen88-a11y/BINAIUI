@@ -60,6 +60,70 @@ for (const prefix of ['/', '/BINAIUI/']) {
       expect((await imageDownload).suggestedFilename()).toMatch(/^BINAIUI-.*\.(svg|png|jpg|webp)$/);
     });
 
+    test('K equals one and both non Euclidean currents move forward', async ({page,request}) => {
+      const sourceResponse=await request.get(prefix+'genesisfield.js');
+      expect(sourceResponse.ok()).toBe(true);
+      const source=await sourceResponse.text();
+      expect(source.includes(String.fromCharCode(45))).toBe(false);
+      expect(source.includes(String.fromCharCode(8722))).toBe(false);
+      await page.goto(prefix+'#studio');
+      const info=await page.evaluate(()=>{
+        const mod=window.GENESIS_CURVATURE;
+        const canvas=document.querySelector('#gx-canvas');
+        const testedK=[0.25,1,4,15];
+        const gaps=[];
+        const speed=[];
+        const metrics=[];
+        for(const K of testedK){
+          let lastX=Number.NEGATIVE_INFINITY;
+          for(let j=0;j<=200;j++){
+            const t=j/200,lower=mod.streamPoint(K,0,t),upper=mod.streamPoint(K,1,t);
+            gaps.push(upper.y>lower.y+2*mod.spreadAt(t));
+            if(j>0)speed.push(lower.x>lastX);
+            lastX=lower.x;
+            metrics.push(mod.metricFactor(K,lower.x,lower.y));
+          }
+        }
+        return {geometry:canvas.dataset.geometry,direction:canvas.dataset.direction,
+          K:canvas.dataset.curvature,palette:mod.palette,spectrum:mod.spectrum,
+          spectralStart:mod.spectralColor(0),spectralEnd:mod.spectralColor(1),
+          spectrumTag:canvas.dataset.spectrum,streamsTag:canvas.dataset.streams,
+          crossbarsTag:canvas.dataset.crossbars,gaps,speed,metrics,
+          waist:mod.spreadAt(0.5),outer:mod.spreadAt(0),
+          low:mod.remapRGB(10,10,10),mid:mod.remapRGB(120,120,120),
+          high:mod.remapRGB(250,250,250)};
+      });
+      expect(info.geometry).toBe('forwardCurvedTwinStreams');
+      expect(info.direction).toBe('forwardOnly');
+      expect(info.K).toBe('1');
+      expect(info.palette).toEqual({void:'#000000',bio:'#19FF33',ultraviolet:'#CC00FF'});
+      expect(Object.keys(info.spectrum)).toHaveLength(16);
+      expect(info.spectrum.red).toBe('#FF3348');
+      expect(info.spectrum.green).toBe('#19FF33');
+      expect(info.spectrum.cyan).toBe('#00F6FF');
+      expect(info.spectrum.violet).toBe('#CC00FF');
+      expect(info.spectrum.rose).toBe('#FF54A6');
+      expect(info.spectralStart).toBe('hsl(0, 100%, 60%)');
+      expect(info.spectralEnd).toBe('hsl(315, 100%, 60%)');
+      expect(info.spectrumTag).toBe('fullVisible');
+      expect(info.streamsTag).toBe('2');
+      expect(info.crossbarsTag).toBe('none');
+      expect(info.waist).toBeLessThan(info.outer);
+      expect(info.gaps.every(Boolean)).toBe(true);
+      expect(info.speed.every(Boolean)).toBe(true);
+      expect(info.metrics.every(v=>v>0&&Number.isFinite(v))).toBe(true);
+      expect(info.low).toEqual([10,10,10,255]);
+      expect(info.mid).toEqual([120,120,120,255]);
+      expect(info.high).toEqual([250,250,250,255]);
+      await page.locator('#gx-curvature').fill('4');
+      await page.locator('#gx-curvature').dispatchEvent('change');
+      await expect(page.locator('#gx-canvas')).toHaveAttribute('data-curvature','4');
+      await page.locator('#gx-curvature').fill('0');
+      await page.locator('#gx-curvature').dispatchEvent('change');
+      await expect(page.locator('#gx-canvas')).toHaveAttribute('data-curvature','1');
+      await expect(page.locator('#gx-curvature-desc')).toContainText('non Euclidean');
+    });
+
     test('field creates open-edge glyph art and exports a PNG', async ({ page }) => {
       await page.goto(prefix+'#studio');
       const canvas=page.locator('#gx-canvas');
