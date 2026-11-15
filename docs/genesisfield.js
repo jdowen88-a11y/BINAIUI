@@ -56,9 +56,12 @@ function streamPoint(K,stream,t) {
   }
   const x=t;
   const coupling=K/(1+K);
-  const base=0.26+0.07*coupling*Math.sin(2*Math.PI*t);
-  const gap=0.12+0.13*coupling+0.32*Math.pow(Math.cos(Math.PI*t),2);
-  return {x,y:base+(stream===0?0:gap)};
+  const wings=Math.pow(Math.cos(Math.PI*t),2);
+  const tilt=0.16*(t+0.5*Math.cos(Math.PI));
+  const upper=0.42+tilt+0.08*Math.cos(Math.PI)*wings+
+    0.03*coupling*Math.sin(2*Math.PI*t);
+  const gap=0.15+(0.14+0.04*coupling)*wings;
+  return {x,y:upper+(stream===0?0:gap)};
 }
 
 function currentsAtX(x,K=1) {
@@ -67,8 +70,15 @@ function currentsAtX(x,K=1) {
   }
   const lower=streamPoint(K,0,x);
   const upper=streamPoint(K,1,x);
-  const gap=0.12+0.13*K/(1+K)+0.32*Math.pow(Math.cos(Math.PI*x),2);
+  const gap=0.15+(0.14+0.04*K/(1+K))*Math.pow(Math.cos(Math.PI*x),2);
   return {lower,upper,gap};
+}
+
+function spreadAt(t) {
+  if(!Number.isFinite(t)||t<0||t>1){
+    throw new RangeError('Invalid spread position.');
+  }
+  return 0.022+0.110*Math.pow(Math.cos(Math.PI*t),2);
 }
 
 function remapRGB(red,green,blue,alpha=255) {
@@ -103,7 +113,7 @@ function rng(seed) {
 }
 
 function screen(point,width,height) {
-  return [point.x*width,(0.14+point.y*0.79)*height];
+  return [point.x*width,(0.02+point.y*0.96)*height];
 }
 
 function render(canvas,{seed=808,K=1}={}) {
@@ -137,9 +147,10 @@ function render(canvas,{seed=808,K=1}={}) {
     for(let layer=0;layer<29;layer++){
       graphic.beginPath();
       const phase=Math.cos(Math.PI*layer/14);
-      const offset=0.044*phase;
       for(let step=0;step<=220;step++){
-        const point=streamPoint(K,stream,step/220);
+        const t=step/220;
+        const point=streamPoint(K,stream,t);
+        const offset=spreadAt(t)*phase;
         const pos=screen({x:point.x,y:point.y+offset},w,h);
         if(step===0)graphic.moveTo(...pos);
         else graphic.lineTo(...pos);
@@ -157,7 +168,7 @@ function render(canvas,{seed=808,K=1}={}) {
     for(let i=0;i<270;i++){
       const t=(i+0.2+random()*0.5)/270;
       const point=streamPoint(K,stream,t);
-      const offset=0.040*Math.cos(Math.PI*random());
+      const offset=spreadAt(t)*Math.cos(Math.PI*random());
       const pos=screen({x:point.x,y:point.y+offset},w,h);
       const color=spectralColor(t,Math.cos(Math.PI*random()));
       graphic.save();
@@ -177,7 +188,7 @@ function render(canvas,{seed=808,K=1}={}) {
     for(let i=0;i<420;i++){
       const t=random();
       const point=streamPoint(K,stream,t);
-      const offset=0.042*Math.cos(Math.PI*random());
+      const offset=spreadAt(t)*Math.cos(Math.PI*random());
       const pos=screen({x:point.x,y:point.y+offset},w,h);
       graphic.globalAlpha=0.16+0.74*random();
       graphic.fillStyle=spectralColor(t,Math.cos(Math.PI*random()));
@@ -198,6 +209,7 @@ window.GENESIS_CURVATURE=Object.freeze({
   metricFactor,
   streamPoint,
   currentsAtX,
+  spreadAt,
   remapRGB,
   render
 });
