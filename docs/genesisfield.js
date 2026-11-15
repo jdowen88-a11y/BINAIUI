@@ -14,6 +14,24 @@ const COLORS=Object.freeze({
   bio:'#19FF33',
   ultraviolet:'#CC00FF'
 });
+const SPECTRUM=Object.freeze({
+  red:'#FF3348',
+  orange:'#FF832B',
+  amber:'#FFB632',
+  gold:'#FFD842',
+  yellow:'#FFFF45',
+  chartreuse:'#A9FF33',
+  green:'#19FF33',
+  jade:'#34FF91',
+  turquoise:'#15FFD1',
+  cyan:'#00F6FF',
+  azure:'#2AB7FF',
+  blue:'#1676FF',
+  indigo:'#5B4FFF',
+  violet:'#CC00FF',
+  magenta:'#FF24DB',
+  rose:'#FF54A6'
+});
 const GLYPHS=Array.from('0123456789∞λπΣ∴⌑∅∿');
 
 function validK(K) {
@@ -54,10 +72,26 @@ function currentsAtX(x,K=1) {
 }
 
 function remapRGB(red,green,blue,alpha=255) {
-  const luminance=(0.2126*red+0.7152*green+0.0722*blue)/255;
-  if(luminance<1/3)return [0,0,0,alpha];
-  if(luminance<2/3)return [25,255,51,alpha];
-  return [204,0,255,alpha];
+  const byte=value=>Number.isFinite(value)?Math.min(255,Math.max(0,Math.round(value))):0;
+  return [byte(red),byte(green),byte(blue),byte(alpha)];
+}
+
+function spectralColor(t,phase=0) {
+  if(!Number.isFinite(t)||t<0||t>1||!Number.isFinite(phase)){
+    throw new RangeError('Invalid spectrum position.');
+  }
+  const hue=Math.round(Math.max(0,Math.min(330,
+    315*t+15*phase*Math.sin(2*Math.PI*t))));
+  return 'hsl('+hue+', 100%, 60%)';
+}
+
+function spectralGradient(graphic,width,phase=0) {
+  const gradient=graphic.createLinearGradient(0,0,width,0);
+  for(let step=0;step<=32;step++){
+    const t=step/32;
+    gradient.addColorStop(t,spectralColor(t,phase));
+  }
+  return gradient;
 }
 
 function rng(seed) {
@@ -91,56 +125,63 @@ function render(canvas,{seed=808,K=1}={}) {
   canvas.dataset.geometry='forwardCurvedTwinStreams';
   canvas.dataset.direction='forwardOnly';
   canvas.dataset.curvature=String(K);
+  canvas.dataset.spectrum='fullVisible';
+  canvas.dataset.streams='2';
+  canvas.dataset.crossbars='none';
   graphic.globalAlpha=1;
   graphic.shadowBlur=0;
   graphic.fillStyle=COLORS.void;
   graphic.fillRect(0,0,w,h);
 
   for(let stream=0;stream<2;stream++){
-    const color=stream===0?COLORS.bio:COLORS.ultraviolet;
-
-    for(let layer=0;layer<19;layer++){
+    for(let layer=0;layer<29;layer++){
       graphic.beginPath();
-      const offset=0.018*Math.cos(Math.PI*layer/9);
-      for(let step=0;step<=175;step++){
-        const point=streamPoint(K,stream,step/175);
+      const phase=Math.cos(Math.PI*layer/14);
+      const offset=0.044*phase;
+      for(let step=0;step<=220;step++){
+        const point=streamPoint(K,stream,step/220);
         const pos=screen({x:point.x,y:point.y+offset},w,h);
         if(step===0)graphic.moveTo(...pos);
         else graphic.lineTo(...pos);
       }
-      graphic.globalAlpha=layer===9?0.94:0.10+0.24*Math.sin(Math.PI*layer/19);
-      graphic.strokeStyle=color;
-      graphic.lineWidth=(layer===9?1.4:0.3+random()*0.6)*ratio;
-      graphic.shadowColor=color;
-      graphic.shadowBlur=(layer===9?16:5)*ratio;
+      const gradient=spectralGradient(graphic,w,phase);
+      graphic.strokeStyle=gradient;
+      graphic.globalAlpha=layer===14?0.20:0.09;
+      graphic.lineWidth=(layer===14?5.5:2.2+random()*1.2)*ratio;
+      graphic.stroke();
+      graphic.globalAlpha=layer===14?0.98:0.24+0.24*Math.sin(Math.PI*(layer+1)/30);
+      graphic.lineWidth=(layer===14?1.6:0.4+random()*0.65)*ratio;
       graphic.stroke();
     }
-    graphic.shadowBlur=0;
 
-    for(let i=0;i<145;i++){
-      const t=(i+0.2+random()*0.5)/145;
-      const pos=screen(streamPoint(K,stream,t),w,h);
+    for(let i=0;i<270;i++){
+      const t=(i+0.2+random()*0.5)/270;
+      const point=streamPoint(K,stream,t);
+      const offset=0.040*Math.cos(Math.PI*random());
+      const pos=screen({x:point.x,y:point.y+offset},w,h);
+      const color=spectralColor(t,Math.cos(Math.PI*random()));
       graphic.save();
       graphic.translate(...pos);
-      graphic.globalAlpha=0.35+0.64*random();
+      graphic.globalAlpha=0.45+0.54*random();
       graphic.fillStyle=color;
       graphic.shadowColor=color;
-      graphic.shadowBlur=(3+random()*9)*ratio;
-      graphic.font=(8+random()*10)*ratio+'px monospace';
+      graphic.shadowBlur=(2+random()*6)*ratio;
+      graphic.font=(7+random()*9)*ratio+'px monospace';
       graphic.textAlign='center';
       graphic.textBaseline='middle';
       graphic.fillText(GLYPHS[Math.floor(random()*GLYPHS.length)],0,0);
       graphic.restore();
     }
 
-    for(let i=0;i<220;i++){
+    graphic.shadowBlur=0;
+    for(let i=0;i<420;i++){
       const t=random();
       const point=streamPoint(K,stream,t);
-      const offset=0.041*Math.cos(Math.PI*random());
+      const offset=0.042*Math.cos(Math.PI*random());
       const pos=screen({x:point.x,y:point.y+offset},w,h);
-      graphic.globalAlpha=0.12+0.7*random();
-      graphic.fillStyle=color;
-      const size=(0.4+random()*1.2)*ratio;
+      graphic.globalAlpha=0.16+0.74*random();
+      graphic.fillStyle=spectralColor(t,Math.cos(Math.PI*random()));
+      const size=(0.4+random()*1.3)*ratio;
       graphic.fillRect(pos[0],pos[1],size,size);
     }
   }
@@ -151,6 +192,8 @@ function render(canvas,{seed=808,K=1}={}) {
 
 window.GENESIS_CURVATURE=Object.freeze({
   palette:COLORS,
+  spectrum:SPECTRUM,
+  spectralColor,
   validK,
   metricFactor,
   streamPoint,
