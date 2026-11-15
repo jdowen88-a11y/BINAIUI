@@ -60,6 +60,38 @@ for (const prefix of ['/', '/BINAIUI/']) {
       expect((await imageDownload).suggestedFilename()).toMatch(/^BINAIUI-.*\.(svg|png|jpg|webp)$/);
     });
 
+    test('K equals negative curvature: two disjoint streams and exact triad', async ({page}) => {
+      await page.goto(prefix+'#studio');
+      const info=await page.evaluate(()=>{
+        const mod=window.GENESIS_CURVATURE;
+        const canvas=document.querySelector('#gx-canvas');
+        const Ks=[-0.25,-1,-4];
+        const gaps=[-0.49,-0.25,0,0.25,0.49].map(x=>mod.currentsAtX(x).gap);
+        const unitSpeeds=Ks.map(K=>{
+          const s=0.4,epsilon=1e-6,r=0.8;
+          const p=mod.geodesicPoint(K,r,s),a=mod.geodesicPoint(K,r,s-epsilon),b=mod.geodesicPoint(K,r,s+epsilon);
+          const vx=(b.x-a.x)/(2*epsilon),vy=(b.y-a.y)/(2*epsilon);
+          return Math.sqrt((vx*vx+vy*vy)*mod.metricFactor(K,p.y));
+        });
+        return {geometry:canvas.dataset.geometry,K:canvas.dataset.curvature,palette:mod.palette,gaps,unitSpeeds,
+          low:mod.remapRGB(10,10,10),mid:mod.remapRGB(120,120,120),high:mod.remapRGB(250,250,250)};
+      });
+      expect(info.geometry).toBe('hyperbolic-twin-geodesics');
+      expect(info.K).toBe('-1');
+      expect(info.palette).toEqual({void:'#000000',bio:'#19FF33',ultraviolet:'#CC00FF'});
+      expect(info.gaps.every(g=>g>0)).toBe(true);
+      expect(info.unitSpeeds.every(v=>Math.abs(v-1)<0.001)).toBe(true);
+      expect(info.low).toEqual([0,0,0,255]);
+      expect(info.mid).toEqual([25,255,51,255]);
+      expect(info.high).toEqual([204,0,255,255]);
+      await page.locator('#gx-curvature').fill('-4');
+      await page.locator('#gx-curvature').dispatchEvent('change');
+      await expect(page.locator('#gx-canvas')).toHaveAttribute('data-curvature','-4');
+      await page.locator('#gx-curvature').fill('0');
+      await page.locator('#gx-curvature').dispatchEvent('change');
+      await expect(page.locator('#gx-canvas')).toHaveAttribute('data-curvature','-1');
+    });
+
     test('field creates open-edge glyph art and exports a PNG', async ({ page }) => {
       await page.goto(prefix+'#studio');
       const canvas=page.locator('#gx-canvas');
