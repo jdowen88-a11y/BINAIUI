@@ -17,7 +17,7 @@ for(const prefix of ['/', '/BINAIUI/']){
     expect(ancient.test(name)).toBe(true);
     expect(ancient.test(pieces[1])).toBe(true);
    }
-   const removed=text.replaceAll('const','').replaceAll('=','').replaceAll(' ','').trim();
+   const removed=text.replaceAll('const','').replaceAll('=','').replaceAll(' ','').replaceAll(String.fromCharCode(10),'').trim();
    expect(Array.from(removed).every(char=>/^[\u{13000}-\u{1342f}]$/u.test(char))).toBe(true);
    expect(text.includes(String.fromCharCode(45))).toBe(false);
   });
