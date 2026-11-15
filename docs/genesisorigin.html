@@ -23,18 +23,58 @@ input{width:72px}
 <body>
 <canvas id="universe"></canvas>
 <div id="controls">
-<span>GENESIS ORIGIN</span>
+<span title="Ancient GENESIS source">𓁹𓇳𓋹</span>
 <input id="seed" value="808" inputmode="numeric">
-<button id="create">Regenerate</button>
-<button id="vector">Save Vector SVG</button>
-<span id="report" role="status">Unbounded glyph field</span>
+<button id="create" title="Regenerate">𓇳</button>
+<button id="vector" title="Save Vector SVG">𓋹</button>
+<span id="report" role="status">𓂀𓆣𓈖</span>
 </div>
 <script>
 (function(){
 'use strict';
 
-const glyphs=Array.from('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz∞∑∫πλΣΠΩΨΦΔξφ∂∇∈∴∵≈≡⊕⊗⊙⌘⌬⌖∿◊⋈⋆✦✧✳☼☾☥𓂀𓆣𓇳𓊹𓉐𓃭𓅃𓈖𓋹𓁹𓊽𓂋𓄿𓆑𓇋𓎛𓂝𓏏𓃀𓂧𓅓𓇓𓆓𓏤𒀭𒀸𒄑𒆠𒈗𒊩𒋗𒌋𒉌𒀀𒆷ᚠᚢᚦᚨᚱᚲᚷᚹᛉᛟ');
-const sparks=Array.from('0∞8⋆∴·∗✧Σ');
+let glyphs=[];
+let sparks=[];
+let program=[];
+let programSignature=808;
+
+function readAncientProgram(text){
+  if(typeof text!=='string')throw Error('Ancient source must be text.');
+  const lines=text.trimEnd().split(String.fromCharCode(10));
+  const grammar=/^const (\S+) = (\S+)$/u;
+  const isAncient=char=>{
+    const point=char.codePointAt(0);
+    return point>=77824&&point<=78895;
+  };
+  const records=[];
+  const names=new Set();
+  if(lines.length<6)throw Error('Ancient source has too few declarations.');
+  for(const line of lines){
+    const match=grammar.exec(line);
+    if(!match)throw Error('Ancient source contains a forbidden declaration.');
+    if(!Array.from(match[1]).every(isAncient)||!Array.from(match[2]).every(isAncient)){
+      throw Error('Ancient source contains a forbidden character.');
+    }
+    if(names.has(match[1]))throw Error('Ancient source contains a repeated declaration.');
+    names.add(match[1]);
+    records.push({name:match[1],glyphs:Array.from(match[2])});
+  }
+  return records;
+}
+
+function loadAncientProgram(records){
+  program=records;
+  glyphs=records.flatMap(record=>record.glyphs);
+  sparks=records.map(record=>record.name);
+  if(!glyphs.length||!sparks.length)throw Error('Ancient glyph declarations are empty.');
+  let signature=808;
+  for(const record of records){
+    for(const char of record.name+record.glyphs.join('')){
+      signature=(signature*131+char.codePointAt(0))%2147483647;
+    }
+  }
+  programSignature=signature||808;
+}
 const tones=[
 [1,0.08,0.24],
 [1,0.31,0.04],
@@ -77,7 +117,7 @@ function squared(value){return value*value;}
 function sinus(value){return Math.sin(Math.PI*value);}
 function cosine(value){return Math.cos(Math.PI*value);}
 function readyRandom(value){
- let state=Math.floor(Math.abs(Number(value)||808))%2147483647;
+ let state=Math.floor(Math.abs(Number(value)||808)+programSignature)%2147483647;
  if(state===0)state=808;
  return function(){
   state=state*16807%2147483647;
@@ -249,12 +289,14 @@ function draw(seed=808){
  context.textBaseline='middle';
  marks=[];
  count=0;
- dust();
- torrent();
- tornVeins();
- spiralTides();
- letterStorm();
- constellation();
+ const engines=new Map([
+  ['𓁹',dust],['𓇳',torrent],['𓈖',tornVeins],
+  ['𓆣',spiralTides],['𓊽',letterStorm],['𓋹',constellation]
+ ]);
+ for(const item of program){
+  const engine=engines.get(item.name);
+  if(engine)engine();
+ }
  context.shadowBlur=0;
  context.globalAlpha=1;
  report.textContent='SEED '+seeded+'  |  '+count.toLocaleString()+' glyphs  |  '+(wide?'Display P3':'Preview mode');
@@ -280,12 +322,22 @@ function saveVector(){
  grab(new Blob([xml],{type:'image/svg+xml'}),'GENESIS_ORIGIN_'+seeded+'.svg');
  report.textContent='Vector field saved with '+marks.length.toLocaleString()+' glyph elements.';
 }
-button.addEventListener('click',()=>draw(seedInput.value));
-seedInput.addEventListener('change',()=>draw(seedInput.value));
+async function boot(){
+ try{
+  const response=await fetch('./genesisorigin.glyph',{cache:'reload'});
+  if(!response.ok)throw Error('Ancient source could not be loaded.');
+  loadAncientProgram(readAncientProgram(await response.text()));
+  draw(808);
+ }catch(error){
+  report.textContent='GENESIS source rejected: '+error.message;
+ }
+}
+button.addEventListener('click',()=>{if(program.length)draw(seedInput.value);});
+seedInput.addEventListener('change',()=>{if(program.length)draw(seedInput.value);});
 document.getElementById('vector').addEventListener('click',saveVector);
-window.addEventListener('resize',()=>draw(seeded));
-window.GENESIS_ORIGIN=Object.freeze({draw,saveVector,summary:()=>({seed:seeded,glyphs:count,space:wide?p3:'preview'})});
-draw(808);
+window.addEventListener('resize',()=>{if(program.length)draw(seeded);});
+window.GENESIS_ORIGIN=Object.freeze({draw,saveVector,readAncientProgram,summary:()=>({seed:seeded,glyphs:count,space:wide?p3:'preview',program:program.length,source:'genesisorigin.glyph',signature:programSignature})});
+boot();
 })();
 </script>
 </body>
