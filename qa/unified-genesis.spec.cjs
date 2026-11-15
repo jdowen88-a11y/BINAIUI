@@ -60,7 +60,12 @@ for (const prefix of ['/', '/BINAIUI/']) {
       expect((await imageDownload).suggestedFilename()).toMatch(/^BINAIUI-.*\.(svg|png|jpg|webp)$/);
     });
 
-    test('K equals one and both non Euclidean currents move forward', async ({page}) => {
+    test('K equals one and both non Euclidean currents move forward', async ({page,request}) => {
+      const sourceResponse=await request.get(prefix+'genesisfield.js');
+      expect(sourceResponse.ok()).toBe(true);
+      const source=await sourceResponse.text();
+      expect(source.includes(String.fromCharCode(45))).toBe(false);
+      expect(source.includes(String.fromCharCode(8722))).toBe(false);
       await page.goto(prefix+'#studio');
       const info=await page.evaluate(()=>{
         const mod=window.GENESIS_CURVATURE;
@@ -73,8 +78,8 @@ for (const prefix of ['/', '/BINAIUI/']) {
           let lastX=Number.NEGATIVE_INFINITY;
           for(let j=0;j<=200;j++){
             const t=j/200,lower=mod.streamPoint(K,0,t),upper=mod.streamPoint(K,1,t);
-            gaps.push(upper.y-lower.y);
-            if(j>0)speed.push(lower.x-lastX);
+            gaps.push(upper.y>lower.y);
+            if(j>0)speed.push(lower.x>lastX);
             lastX=lower.x;
             metrics.push(mod.metricFactor(K,lower.x,lower.y));
           }
@@ -84,12 +89,12 @@ for (const prefix of ['/', '/BINAIUI/']) {
           low:mod.remapRGB(10,10,10),mid:mod.remapRGB(120,120,120),
           high:mod.remapRGB(250,250,250)};
       });
-      expect(info.geometry).toBe('forward-spherical-twin-streams');
-      expect(info.direction).toBe('forward-only');
+      expect(info.geometry).toBe('forwardCurvedTwinStreams');
+      expect(info.direction).toBe('forwardOnly');
       expect(info.K).toBe('1');
       expect(info.palette).toEqual({void:'#000000',bio:'#19FF33',ultraviolet:'#CC00FF'});
-      expect(info.gaps.every(g=>g>0)).toBe(true);
-      expect(info.speed.every(step=>step>0)).toBe(true);
+      expect(info.gaps.every(Boolean)).toBe(true);
+      expect(info.speed.every(Boolean)).toBe(true);
       expect(info.metrics.every(v=>v>0&&Number.isFinite(v))).toBe(true);
       expect(info.low).toEqual([0,0,0,255]);
       expect(info.mid).toEqual([25,255,51,255]);
