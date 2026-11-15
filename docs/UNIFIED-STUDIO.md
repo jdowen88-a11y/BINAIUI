@@ -40,6 +40,12 @@ The table records the unmerged state on November 4. PRs #1–#5 have since merge
 | `docs/sw.js` | Versioned offline cache includes the new modules |
 | `qa/unified-genesis.spec.cjs` | Browser coverage for the new Studio, built alongside existing tests |
 
+## GENESIS wide gamut PNG exports
+
+The GENESIS Field renderer now requests a genuine `display-p3` Canvas 2D context before rendering, and uses wide gamut `color(display-p3 ...)` values for the luminous spectrum. The PNG export will only download when both the live canvas and the encoded PNG are verified as Display P3. Before a download, Studio inspects the PNG binary for its `iCCP` chunk, decompresses the embedded ICC profile, and verifies the red, green and blue color matrix primaries against Display P3. An sRGB file, missing ICC profile, unsupported Canvas context, or unsupported profile verifier results in a visible error, not a mislabeled file.
+
+The export filename ends in `DisplayP3.png` only after this profile check succeeds. Display P3 is a color gamut distinct from pixel bit depth; browsers may still export **8 bits per channel**. The web canvas does not claim to encode invisible electromagnetic wavelengths, HDR, or 16 bit color. Source artwork remains unmodified and excluded from this procedural rendering path. Test actual iOS Safari PNG file metadata, saved image appearance, and offline use before declaring physical device acceptance.
+
 ## Artwork integrity and provenance
 
 `docs/genesis-reference-manifest.json` is a **metadata catalog**, not a bundle of images. All ten entries have `stored_in_github: false` at the source snapshot. One entry has a complete SHA-256 value; the other nine have known prefixes only. A prefix match is **not equivalent** to proving the full original file is preserved; that status is labeled accordingly.
