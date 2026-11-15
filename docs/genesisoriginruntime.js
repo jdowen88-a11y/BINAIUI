@@ -1,0 +1,316 @@
+(function(){
+ const meta=document.createElement('meta');
+ meta.name='viewport';
+ meta.content='width=device'+String.fromCharCode(45)+'width,initial'+String.fromCharCode(45)+'scale=1';
+ document.head.appendChild(meta);
+})();
+
+(function(){
+'use strict';
+
+let glyphs=[];
+let sparks=[];
+let program=[];
+let programSignature=808;
+
+function readAncientProgram(text){
+  if(typeof text!=='string')throw Error('Ancient source must be text.');
+  const lines=text.trimEnd().split(String.fromCharCode(10));
+  const grammar=/^const (\S+) = (\S+)$/u;
+  const isAncient=char=>{
+    const point=char.codePointAt(0);
+    return point>=77824&&point<=78895;
+  };
+  const records=[];
+  const names=new Set();
+  if(lines.length<6)throw Error('Ancient source has too few declarations.');
+  for(const line of lines){
+    const match=grammar.exec(line);
+    if(!match)throw Error('Ancient source contains a forbidden declaration.');
+    if(!Array.from(match[1]).every(isAncient)||!Array.from(match[2]).every(isAncient)){
+      throw Error('Ancient source contains a forbidden character.');
+    }
+    if(names.has(match[1]))throw Error('Ancient source contains a repeated declaration.');
+    names.add(match[1]);
+    records.push({name:match[1],glyphs:Array.from(match[2])});
+  }
+  return records;
+}
+
+function loadAncientProgram(records){
+  program=records;
+  glyphs=records.flatMap(record=>record.glyphs);
+  sparks=records.map(record=>record.name);
+  if(!glyphs.length||!sparks.length)throw Error('Ancient glyph declarations are empty.');
+  let signature=808;
+  for(const record of records){
+    for(const char of record.name+record.glyphs.join('')){
+      signature=(signature*131+char.codePointAt(0))%2147483647;
+    }
+  }
+  programSignature=signature||808;
+}
+const tones=[
+[1,0.08,0.24],
+[1,0.31,0.04],
+[1,0.76,0.08],
+[0.88,1,0.12],
+[0.32,1,0.09],
+[0.05,1,0.42],
+[0.03,1,0.96],
+[0.06,0.60,1],
+[0.20,0.28,1],
+[0.48,0.14,1],
+[0.86,0.06,1],
+[1,0.10,0.70],
+[1,0.56,0.90],
+[1,0.88,0.50],
+[0.80,0.90,1],
+[0.96,0.96,1]
+];
+
+const canvas=document.getElementById('universe');
+const button=document.getElementById('create');
+const seedInput=document.getElementById('seed');
+const report=document.getElementById('report');
+const p3='display'+String.fromCharCode(45)+'p3';
+const context=canvas.getContext('2d',{colorSpace:p3,alpha:false});
+if(!context){report.textContent='Canvas 2D is unavailable.';return;}
+
+let width=0;
+let height=0;
+let seeded=808;
+let count=0;
+let marks=[];
+let colors=[];
+let wide=false;
+let random=()=>0.5;
+
+function cycle(value){return (value%1+1)%1;}
+function bounded(value,maximum){return Math.max(0,Math.min(maximum,value));}
+function squared(value){return value*value;}
+function sinus(value){return Math.sin(Math.PI*value);}
+function cosine(value){return Math.cos(Math.PI*value);}
+function readyRandom(value){
+ let state=Math.floor(Math.abs(Number(value)||808)+programSignature)%2147483647;
+ if(state===0)state=808;
+ return function(){
+  state=state*16807%2147483647;
+  return state/2147483647;
+ };
+}
+function choice(source){return source[Math.floor(random()*source.length)];}
+
+function colorAt(value){
+ const index=cycle(value)*tones.length;
+ const a=Math.floor(index)%tones.length;
+ const b=(a+1)%tones.length;
+ const t=index%1;
+ const left=squared(Math.cos(Math.PI*t/2));
+ const right=squared(Math.sin(Math.PI*t/2));
+ const first=tones[a],second=tones[b];
+ const channels=[0,1,2].map(j=>bounded(first[j]*left+second[j]*right,1));
+ if(wide)return 'color('+p3+' '+channels.map(x=>x.toFixed(4)).join(' ')+')';
+ return 'rgb('+channels.map(x=>Math.round(255*x)).join(',')+')';
+}
+function prepareColors(){
+ wide=context.getContextAttributes?.().colorSpace===p3;
+ colors=Array.from({length:240},(_,i)=>colorAt(i/240));
+ canvas.dataset.colorSpace=wide?p3:'preview';
+}
+function symbol(x,y,size,tone,light,content){
+ if(x+size<0||y+size<0||x>width+size||y>height+size)return;
+ const character=content||choice(glyphs);
+ const shade=Math.floor(cycle(tone)*colors.length);
+ const opacity=bounded(light,1);
+ const fontSize=Math.max(2,Math.round(size));
+ context.font=fontSize+'px monospace';
+ context.fillStyle=colors[shade];
+ context.globalAlpha=opacity;
+ context.fillText(character,x,y);
+ if(marks.length<60000)marks.push([Math.round(x),Math.round(y),fontSize,shade,opacity.toFixed(3),character]);
+ count+=1;
+}
+
+function dust(){
+ const amount=Math.round(1800+width*height/760);
+ for(let i=0;i<amount;i++){
+  const x=random()*width;
+  const y=random()*height;
+  const w=random();
+  symbol(x,y,1.5+5*w,0.67+random()*0.50,0.05+random()*0.39,choice(sparks));
+ }
+}
+function torrent(){
+ const lanes=17;
+ const layers=15;
+ const steps=142;
+ for(let lane=0;lane<lanes;lane++){
+  const anchor=(lane+0.5)/lanes;
+  const offset=random()*7;
+  const speed=2.1+random()*4.8;
+  const bending=0.04+random()*0.13;
+  const ruffle=0.02+random()*0.05;
+  const tone=cycle(lane*0.173+random()*0.28);
+  const drift=0.12*sinus(random()*2);
+  for(let fiber=0;fiber<layers;fiber++){
+   const spread=2*fiber/layers+cosine(1);
+   const looseness=random()*0.8+0.2;
+   for(let i=0;i<=steps;i++){
+    const t=i/steps;
+    const p=t*1.15;
+    const fold=bending*sinus(p*speed+offset);
+    const wrinkle=ruffle*sinus(p*(speed*3.4)+offset*2.9);
+    const shattered=0.018*sinus(p*(23+lane*0.7)+spread*4.7+offset);
+    const widening=(0.025+0.09*squared(sinus(p*1.5+offset)))*spread;
+    const y=height*(anchor+fold+wrinkle+shattered+widening+drift*cosine(p*1.7));
+    const x=width*p;
+    const glow=0.24+0.68*random();
+    const size=2.5+random()*6.7+(fiber%5===0?2.5:0);
+    symbol(x,y,size,tone+t*0.19+spread*0.085+random()*0.04,glow);
+    if(random()>0.73){
+     const scatter=height*0.032*looseness*sinus(random()*2);
+     symbol(x+random()*28,y+scatter,2+random()*6,tone+t*0.2,0.18+0.45*random());
+    }
+   }
+  }
+ }
+}
+function tornVeins(){
+ for(let b=0;b<31;b++){
+  const x0=random()*width;
+  const y0=random()*height;
+  const reach=(0.13+0.48*random())*width;
+  const pitch=height*(0.045+random()*0.22);
+  const phase=random()*12;
+  const hue=random();
+  const strands=3+Math.floor(random()*6);
+  for(let i=0;i<strands;i++){
+   const iPhase=i*0.47+phase;
+   const amount=40+Math.floor(random()*60);
+   for(let j=0;j<amount;j++){
+    const t=j/amount;
+    const x=x0+t*reach*cosine(iPhase/11);
+    const y=y0+pitch*sinus(t*3.1+iPhase)+height*0.018*sinus(t*17+iPhase*3);
+    const fracture=height*0.007*sinus(t*43+i*9);
+    symbol(x,y+fracture,2.5+random()*8,hue+t*0.22,0.2+random()*0.7);
+   }
+  }
+ }
+}
+function spiralTides(){
+ for(let s=0;s<18;s++){
+  const x0=random()*width;
+  const y0=random()*height;
+  const reach=Math.min(width,height)*(0.05+0.15*random());
+  const rotation=random()*Math.PI*2;
+  const winds=4+2*random();
+  const hue=random();
+  const arms=2+Math.floor(random()*3);
+  for(let arm=0;arm<arms;arm++){
+   for(let i=0;i<100;i++){
+    const t=(i+random()*0.6)/100;
+    const angle=rotation+t*Math.PI*winds+arm*Math.PI*2/arms;
+    const radius=reach*(0.05+t*0.95);
+    const x=x0+radius*Math.cos(angle);
+    const y=y0+radius*Math.sin(angle);
+    symbol(x,y,2+(3+random()*8)*t,hue+t*0.18,0.15+0.7*random());
+   }
+  }
+ }
+}
+function letterStorm(){
+ for(let c=0;c<23;c++){
+  const x0=random()*width;
+  const y0=random()*height;
+  const length=width*(0.08+0.20*random());
+  const heading=random()*Math.PI*2;
+  const hue=random();
+  const curls=5+Math.floor(random()*8);
+  for(let thread=0;thread<curls;thread++){
+   for(let j=0;j<58;j++){
+    const t=j/58;
+    const side=0.02*height*sinus(t*12+thread*0.8);
+    const expansion=0.16*height*random()*t;
+    const x=x0+length*t*Math.cos(heading)+side*Math.sin(heading);
+    const y=y0+length*t*Math.sin(heading)+expansion+side*Math.cos(heading);
+    symbol(x,y,3+random()*8,hue+t*0.25,0.15+0.73*random());
+   }
+  }
+ }
+}
+function constellation(){
+ const amount=Math.round(340+width*height/3000);
+ for(let i=0;i<amount;i++){
+  const x=random()*width;
+  const y=random()*height;
+  symbol(x,y,8+random()*24,random(),0.21+random()*0.55,choice(sparks));
+ }
+}
+function draw(seed=808){
+ seeded=Math.floor(Math.abs(Number(seed)||808));
+ random=readyRandom(seeded);
+ const ratio=Math.min(2,1500/window.innerWidth,1100/window.innerHeight);
+ width=Math.round(window.innerWidth*ratio);
+ height=Math.round(window.innerHeight*ratio);
+ canvas.width=width;
+ canvas.height=height;
+ prepareColors();
+ context.globalCompositeOperation='source'+String.fromCharCode(45)+'over';
+ context.globalAlpha=1;
+ context.fillStyle='#000000';
+ context.fillRect(0,0,width,height);
+ context.globalCompositeOperation='screen';
+ context.textBaseline='middle';
+ marks=[];
+ count=0;
+ const engines=new Map([
+  ['𓁹',dust],['𓇳',torrent],['𓈖',tornVeins],
+  ['𓆣',spiralTides],['𓊽',letterStorm],['𓋹',constellation]
+ ]);
+ for(const item of program){
+  const engine=engines.get(item.name);
+  if(engine)engine();
+ }
+ context.shadowBlur=0;
+ context.globalAlpha=1;
+ report.textContent='SEED '+seeded+'  |  '+count.toLocaleString()+' glyphs  |  '+(wide?'Display P3':'Preview mode');
+ return {seed:seeded,glyphs:count,space:wide?p3:'preview'};
+}
+function grab(blob,filename){
+ const url=URL.createObjectURL(blob);
+ const anchor=document.createElement('a');
+ anchor.href=url;
+ anchor.download=filename;
+ document.body.appendChild(anchor);
+ anchor.click();
+ anchor.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),30000);
+}
+function saveVector(){
+ const parts=marks.map(mark=>{
+  const x=mark[0],y=mark[1],size=mark[2],shade=mark[3],opacity=mark[4],glyph=mark[5];
+  const escaped=glyph.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+  return '<text x="'+x+'" y="'+y+'" style="fill:'+colors[shade]+';opacity:'+opacity+';font:'+size+'px monospace">'+escaped+'</text>';
+ });
+ const xml='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+width+' '+height+'"><rect width="100%" height="100%" fill="#000000"/>'+parts.join('')+'</svg>';
+ grab(new Blob([xml],{type:'image/svg+xml'}),'GENESIS_ORIGIN_'+seeded+'.svg');
+ report.textContent='Vector field saved with '+marks.length.toLocaleString()+' glyph elements.';
+}
+async function boot(){
+ try{
+  const response=await fetch('./genesisorigin.glyph',{cache:'reload'});
+  if(!response.ok)throw Error('Ancient source could not be loaded.');
+  loadAncientProgram(readAncientProgram(await response.text()));
+  draw(808);
+ }catch(error){
+  report.textContent='GENESIS source rejected: '+error.message;
+ }
+}
+button.addEventListener('click',()=>{if(program.length)draw(seedInput.value);});
+seedInput.addEventListener('change',()=>{if(program.length)draw(seedInput.value);});
+document.getElementById('vector').addEventListener('click',saveVector);
+window.addEventListener('resize',()=>{if(program.length)draw(seeded);});
+window.GENESIS_ORIGIN=Object.freeze({draw,saveVector,readAncientProgram,summary:()=>({seed:seeded,glyphs:count,space:wide?p3:'preview',program:program.length,source:'genesisorigin.glyph',signature:programSignature})});
+boot();
+})();
