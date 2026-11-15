@@ -83,17 +83,20 @@ for(const prefix of ['/', '/BINAIUI/']){
    await page.setViewportSize({width:390,height:844});
    await page.goto(prefix+'genesisorigin.html');
    await expect.poll(async()=>page.evaluate(()=>window.GENESIS_ORIGIN?.summary().program||0),{timeout:45000}).toBe(19);
-   const invalid=await page.evaluate(()=>{
+   const invalid=await page.evaluate(async()=>{
     const parse=window.GENESIS_ORIGIN.readAncientProgram;
-    return [
-      'const 𓁹 = ABC',
-      'const 𓁹 = 𓇳+𓂀',
-      'const 𓁹 = 𓇳; ',
-      'const 𓁹 = 𓇳\nconst 𓁹 = 𓊹',
-      'function 𓁹 = 𓇳',
-      'const 𓁹 = 123'
-    ].map(text=>{
-      try{parse(text);return false;}catch{return true;}
+    const source=await (await fetch('./genesisorigin.glyph')).text();
+    const modifications=[
+      text=>text.replace('𓇳𓋹','ABC'),
+      text=>text.replace('𓇳𓋹','𓇳+𓋹'),
+      text=>text.replace('𓇳𓋹','𓇳;𓋹'),
+      text=>text.replace('𓇳𓋹','𓇳𒀭𓋹'),
+      text=>text.replace('const 𓁹','function 𓁹'),
+      text=>text.replace('𓇳𓋹','123'),
+      text=>text.replace('const 𓇳','const 𓁹')
+    ];
+    return modifications.map(mutate=>{
+      try{parse(mutate(source));return false;}catch{return true;}
     });
    });
    expect(invalid.every(Boolean)).toBe(true);
