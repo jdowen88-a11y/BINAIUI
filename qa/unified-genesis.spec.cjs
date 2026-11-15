@@ -78,7 +78,7 @@ for (const prefix of ['/', '/BINAIUI/']) {
           let lastX=Number.NEGATIVE_INFINITY;
           for(let j=0;j<=200;j++){
             const t=j/200,lower=mod.streamPoint(K,0,t),upper=mod.streamPoint(K,1,t);
-            gaps.push(upper.y>lower.y);
+            gaps.push(upper.y>lower.y+2*mod.spreadAt(t));
             if(j>0)speed.push(lower.x>lastX);
             lastX=lower.x;
             metrics.push(mod.metricFactor(K,lower.x,lower.y));
@@ -89,6 +89,7 @@ for (const prefix of ['/', '/BINAIUI/']) {
           spectralStart:mod.spectralColor(0),spectralEnd:mod.spectralColor(1),
           spectrumTag:canvas.dataset.spectrum,streamsTag:canvas.dataset.streams,
           crossbarsTag:canvas.dataset.crossbars,gaps,speed,metrics,
+          waist:mod.spreadAt(0.5),outer:mod.spreadAt(0),
           low:mod.remapRGB(10,10,10),mid:mod.remapRGB(120,120,120),
           high:mod.remapRGB(250,250,250)};
       });
@@ -107,6 +108,7 @@ for (const prefix of ['/', '/BINAIUI/']) {
       expect(info.spectrumTag).toBe('fullVisible');
       expect(info.streamsTag).toBe('2');
       expect(info.crossbarsTag).toBe('none');
+      expect(info.waist).toBeLessThan(info.outer);
       expect(info.gaps.every(Boolean)).toBe(true);
       expect(info.speed.every(Boolean)).toBe(true);
       expect(info.metrics.every(v=>v>0&&Number.isFinite(v))).toBe(true);
