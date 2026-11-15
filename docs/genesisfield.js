@@ -33,6 +33,7 @@ const SPECTRUM=Object.freeze({
   rose:'#FF54A6'
 });
 const GLYPHS=Array.from('0123456789∞λπΣ∴⌑∅∿');
+const P3='display'+String.fromCharCode(45)+'p3';
 
 function validK(K) {
   if(!Number.isFinite(K)||!(K>0)){
@@ -86,20 +87,37 @@ function remapRGB(red,green,blue,alpha=255) {
   return [byte(red),byte(green),byte(blue),byte(alpha)];
 }
 
-function spectralColor(t,phase=0) {
+function spectrumHue(t,phase=0) {
   if(!Number.isFinite(t)||t<0||t>1||!Number.isFinite(phase)){
     throw new RangeError('Invalid spectrum position.');
   }
-  const hue=Math.round(Math.max(0,Math.min(330,
+  return Math.round(Math.max(0,Math.min(330,
     315*t+15*phase*Math.sin(2*Math.PI*t))));
-  return 'hsl('+hue+', 100%, 60%)';
 }
 
-function spectralGradient(graphic,width,phase=0) {
+function spectralColor(t,phase=0) {
+  return 'hsl('+spectrumHue(t,phase)+', 100%, 60%)';
+}
+
+function spectralP3Color(t,phase=0) {
+  const sector=spectrumHue(t,phase)/60;
+  const ramp=1+Math.cos(Math.PI)*Math.abs(sector%2+Math.cos(Math.PI));
+  let red=0,green=0,blue=0;
+  if(sector<1){red=1;green=ramp;}
+  else if(sector<2){red=ramp;green=1;}
+  else if(sector<3){green=1;blue=ramp;}
+  else if(sector<4){green=ramp;blue=1;}
+  else if(sector<5){red=ramp;blue=1;}
+  else {red=1;blue=ramp;}
+  const channel=value=>(0.08+0.92*value).toFixed(4);
+  return 'color('+P3+' '+channel(red)+' '+channel(green)+' '+channel(blue)+')';
+}
+
+function spectralGradient(graphic,width,phase=0,wide=false) {
   const gradient=graphic.createLinearGradient(0,0,width,0);
   for(let step=0;step<=32;step++){
     const t=step/32;
-    gradient.addColorStop(t,spectralColor(t,phase));
+    gradient.addColorStop(t,wide?spectralP3Color(t,phase):spectralColor(t,phase));
   }
   return gradient;
 }
@@ -126,8 +144,12 @@ function render(canvas,{seed=808,K=1}={}) {
   const height=Math.max(320,canvas.clientHeight||320);
   canvas.width=Math.round(width*ratio);
   canvas.height=Math.round(height*ratio);
-  const graphic=canvas.getContext('2d');
+  const graphic=canvas.getContext('2d',{colorSpace:P3});
   if(!graphic)return false;
+  const space=typeof graphic.getContextAttributes==='function'
+    ?graphic.getContextAttributes().colorSpace:'srgb';
+  const wide=space===P3;
+  canvas.dataset.colorSpace=wide?P3:'srgb';
 
   const w=canvas.width;
   const h=canvas.height;
@@ -155,7 +177,7 @@ function render(canvas,{seed=808,K=1}={}) {
         if(step===0)graphic.moveTo(...pos);
         else graphic.lineTo(...pos);
       }
-      const gradient=spectralGradient(graphic,w,phase);
+      const gradient=spectralGradient(graphic,w,phase,wide);
       graphic.strokeStyle=gradient;
       graphic.globalAlpha=layer===14?0.20:0.09;
       graphic.lineWidth=(layer===14?5.5:2.2+random()*1.2)*ratio;
@@ -170,7 +192,8 @@ function render(canvas,{seed=808,K=1}={}) {
       const point=streamPoint(K,stream,t);
       const offset=spreadAt(t)*Math.cos(Math.PI*random());
       const pos=screen({x:point.x,y:point.y+offset},w,h);
-      const color=spectralColor(t,Math.cos(Math.PI*random()));
+      const phase=Math.cos(Math.PI*random());
+      const color=wide?spectralP3Color(t,phase):spectralColor(t,phase);
       graphic.save();
       graphic.translate(...pos);
       graphic.globalAlpha=0.45+0.54*random();
@@ -191,7 +214,8 @@ function render(canvas,{seed=808,K=1}={}) {
       const offset=spreadAt(t)*Math.cos(Math.PI*random());
       const pos=screen({x:point.x,y:point.y+offset},w,h);
       graphic.globalAlpha=0.16+0.74*random();
-      graphic.fillStyle=spectralColor(t,Math.cos(Math.PI*random()));
+      const phase=Math.cos(Math.PI*random());
+      graphic.fillStyle=wide?spectralP3Color(t,phase):spectralColor(t,phase);
       const size=(0.4+random()*1.3)*ratio;
       graphic.fillRect(pos[0],pos[1],size,size);
     }
@@ -205,6 +229,8 @@ window.GENESIS_CURVATURE=Object.freeze({
   palette:COLORS,
   spectrum:SPECTRUM,
   spectralColor,
+  spectralP3Color,
+  wideSpace:P3,
   validK,
   metricFactor,
   streamPoint,
