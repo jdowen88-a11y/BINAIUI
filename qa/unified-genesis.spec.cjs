@@ -68,6 +68,7 @@ for (const prefix of ['/', '/BINAIUI/']) {
         const testedK=[0.25,1,4,15];
         const gaps=[];
         const speed=[];
+        const metrics=[];
         for(const K of testedK){
           let lastX=Number.NEGATIVE_INFINITY;
           for(let j=0;j<=200;j++){
@@ -75,11 +76,11 @@ for (const prefix of ['/', '/BINAIUI/']) {
             gaps.push(upper.y-lower.y);
             if(j>0)speed.push(lower.x-lastX);
             lastX=lower.x;
-            expect(mod.metricFactor(K,lower.x,lower.y)).toBeGreaterThan(0);
+            metrics.push(mod.metricFactor(K,lower.x,lower.y));
           }
         }
         return {geometry:canvas.dataset.geometry,direction:canvas.dataset.direction,
-          K:canvas.dataset.curvature,palette:mod.palette,gaps,speed,
+          K:canvas.dataset.curvature,palette:mod.palette,gaps,speed,metrics,
           low:mod.remapRGB(10,10,10),mid:mod.remapRGB(120,120,120),
           high:mod.remapRGB(250,250,250)};
       });
@@ -89,6 +90,7 @@ for (const prefix of ['/', '/BINAIUI/']) {
       expect(info.palette).toEqual({void:'#000000',bio:'#19FF33',ultraviolet:'#CC00FF'});
       expect(info.gaps.every(g=>g>0)).toBe(true);
       expect(info.speed.every(step=>step>0)).toBe(true);
+      expect(info.metrics.every(v=>v>0&&Number.isFinite(v))).toBe(true);
       expect(info.low).toEqual([0,0,0,255]);
       expect(info.mid).toEqual([25,255,51,255]);
       expect(info.high).toEqual([204,0,255,255]);
