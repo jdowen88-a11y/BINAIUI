@@ -1,8 +1,8 @@
-/* GENESIS FORWARD FIELD — two disjoint, strictly forward luminous currents.
-   Non-Euclidean model: spherical stereographic metric
+/* GENESIS FORWARD FIELD: two distinct luminous currents advancing together.
+   Non Euclidean model: spherical stereographic metric
        ds² = 4(dx² + dy²) / (1 + K(x² + y²))² , K > 0.
    Its Gaussian curvature is K. Each current is an oriented trajectory
-   on this surface; do not call the trajectories great-circle geodesics.
+   on this surface; do not call the trajectories great circle geodesics.
    Direction is an independent condition: dx/dt > 0 everywhere.
    No triangles, closed or returning streams, or physical quantum claims.
    The original artworks and input RGB pixel data are never modified. */
