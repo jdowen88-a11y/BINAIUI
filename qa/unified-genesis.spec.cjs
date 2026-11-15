@@ -147,7 +147,7 @@ for (const prefix of ['/', '/BINAIUI/']) {
       const download=page.waitForEvent('download');
       await page.getByRole('button',{name:/Save PNG/}).click();
       const saved=await download;
-      expect(saved.suggestedFilename()).toMatch(/DisplayP3\\.png$/);
+      expect(saved.suggestedFilename()).toMatch(/DisplayP3\.png$/);
       await expect(page.locator('#gx-color-status')).toContainText('Verified Display P3 PNG exported');
       const bytes=await readFile(await saved.path());
       expect(bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))).toBe(true);
