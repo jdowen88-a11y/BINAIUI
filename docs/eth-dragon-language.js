@@ -14,12 +14,16 @@
     Object.freeze({key:'DOWN',symbol:'\\/',legacy:null,meaning:'divergent current'}),
     Object.freeze({key:'UP',symbol:'/\\',legacy:null,meaning:'convergent current'}),
     Object.freeze({key:'GUILLEMETS',symbol:'»«',legacy:'«»',meaning:'reflection crossing'}),
-    Object.freeze({key:'QUESTION',symbol:'⸮',legacy:'?',orientation:'MIRROR_HORIZONTAL',facing:'LEFT',meaning:'reversed open query'}),
-    Object.freeze({key:'EXCLAMATION',symbol:'⹡',legacy:'!',orientation:'MIRROR_HORIZONTAL',facing:'LEFT',meaning:'reversed asymmetric exclamation'})
+    Object.freeze({key:'QUESTION',symbol:'DRAGON_Q_LEFT',legacy:'?',orientation:'MIRROR_HORIZONTAL',facing:'LEFT',meaning:'reversed open query'}),
+    Object.freeze({key:'EXCLAMATION',symbol:'DRAGON_BANG_LEFT',legacy:'!',orientation:'MIRROR_HORIZONTAL',facing:'LEFT',meaning:'reversed asymmetric exclamation'})
   ]);
   const byKey=Object.freeze(Object.fromEntries(operators.map(x=>[x.key,x.symbol])));
   const recognized=operators.map(x=>x.symbol).sort((a,b)=>b.length-a.length);
-  const legacy=[...operators.filter(x=>x.legacy).map(x=>x.legacy),'¿','¡'];
+  // ASCII glyph commands avoid missing-font boxes. Their shape exists as a
+  // standalone vector stroke, never as platform-dependent glyph fallback.
+  const GLYPH_RENDERING='UNFRAMED_VECTOR_STROKES';
+
+  const legacy=[...operators.filter(x=>x.legacy).map(x=>x.legacy),'¿','¡','⸮','⹡'];
   function glyphTokens(value) {
     if (typeof value!=='string') throw new TypeError('ETH Dragon expression must be text.');
     const tokens=[];
@@ -94,8 +98,8 @@
       geometry:ast.fields.GEOMETRY,
       inverse:byKey.ROUND,
       orientation:Object.freeze({
-        QUESTION:Object.freeze({glyph:byKey.QUESTION,mirrorX:true,facing:'LEFT',setup:ast.fields.QUESTION_SETUP,rendering:'custom-vector'}),
-        EXCLAMATION:Object.freeze({glyph:byKey.EXCLAMATION,mirrorX:true,facing:'LEFT',setup:ast.fields.EXCLAMATION_SETUP,rendering:'custom-vector'})
+        QUESTION:Object.freeze({glyph:byKey.QUESTION,mirrorX:true,facing:'LEFT',setup:ast.fields.QUESTION_SETUP,rendering:'unframed-vector'}),
+        EXCLAMATION:Object.freeze({glyph:byKey.EXCLAMATION,mirrorX:true,facing:'LEFT',setup:ast.fields.EXCLAMATION_SETUP,rendering:'unframed-vector'})
       }),
       operations:Object.freeze(ast.instructions.map(line=>Object.freeze({
         field:line.key,
@@ -122,6 +126,9 @@
   }
 
   function paintReversedPunctuation(ctx,key,x,y,size,color='#00E8FF') {
+    // No fillRect, rect, box shadow, border or enclosing shape is drawn.
+    // Only two open curved strokes and their punctuation dots.
+
     const index=operators.find(item=>item.key===key);
     if(!index || !['QUESTION','EXCLAMATION'].includes(key))throw new TypeError('Unknown reversible punctuation operator');
     if(!ctx || typeof ctx.save!=='function')throw new TypeError('Canvas context required');
@@ -156,6 +163,6 @@
     ctx.restore();
   }
 
-  root.ETH_DRAGON=Object.freeze({operators,byKey,glyphTokens,parseSource,compile,emit,interpret,paintReversedPunctuation});
+  root.ETH_DRAGON=Object.freeze({operators,byKey,glyphTokens,parseSource,compile,emit,interpret,paintReversedPunctuation,glyphRendering:GLYPH_RENDERING});
   if (typeof module!=='undefined'&&module.exports)module.exports=root.ETH_DRAGON;
 })(typeof window==='undefined'?globalThis:window);
