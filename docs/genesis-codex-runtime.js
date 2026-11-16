@@ -8,23 +8,13 @@
   'use strict';
   const DIVIDER = ')(';
   const COLORS = ['#CC00FF','#8B5CFF','#FF29D4','#246BFF','#00E8FF','#FFD75A','#19FF33'];
-  const GLYPHS = ['0','1','8','∞',')(','🌀','💜','⚡','🔺','🔻','🐉','ψ','λ','Σ'];
+  const GLYPHS = ['0','1','8','∞',')(','}{','][','><','\\/','/\\','»«','¿','¡','🌀','💜','⚡','🔺','🔻','🐉','ψ','λ','Σ'];
   const KEYS = ['IDENTITY','GEOMETRY','CURVATURE','INVERSE','TRIANGLES','DNA_RUNGS','TRIANGLE_GRID','FLOW','STREAMS'];
   function parse(source) {
     if (typeof source !== 'string') throw new TypeError('A GENESIS source string is required.');
-    if (source.includes('()')) throw new SyntaxError('GENESIS source requires the inverse pair syntax.');
-    const result = Object.create(null);
-    for (const [index,raw] of source.split(/\r?\n/).entries()) {
-      const line = raw.trim();
-      if (!line || line.startsWith('#')) continue;
-      const at = line.indexOf(DIVIDER);
-      if (at < 1) throw new SyntaxError('Missing inverse pair on line ' + (index + 1));
-      const name = line.slice(0,at).trim();
-      const value = line.slice(at + DIVIDER.length).trim();
-      if (!/^[A-Z][A-Z_0-9]*$/.test(name) || !value) throw new SyntaxError('Invalid field on line ' + (index + 1));
-      if (Object.prototype.hasOwnProperty.call(result,name)) throw new SyntaxError('Duplicate field: ' + name);
-      result[name] = value;
-    }
+    if (!scope.ETH_DRAGON) throw new Error('ETH Dragon interpreter must be loaded before the visual runtime.');
+    const ast=scope.ETH_DRAGON.parseSource(source);
+    const result=Object.assign(Object.create(null),ast.fields);
     for (const key of KEYS) if (!result[key]) throw new SyntaxError('Missing GENESIS field: ' + key);
     if (result.INVERSE !== DIVIDER) throw new SyntaxError('Inverse operator must remain )( exactly.');
     if (result.GEOMETRY !== 'HYPERBOLIC FERMI') throw new SyntaxError('Unrecognized curved space.');
