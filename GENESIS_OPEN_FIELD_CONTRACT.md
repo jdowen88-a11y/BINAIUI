@@ -24,7 +24,7 @@ The frequency names above are symbolic identifiers. Do not label them as experim
 * **DNA / twin streams.** Strands remain separately continuous. No connecting bars, bridges or fixed rungs. The distinction is visual: crossing without a connecting segment is permitted.
 * **Lattice / networks.** Connections are organically variable, woven through curved surfaces and free-flowing pathways. No regular triangle tessellation. Use 🔺 and 🔻 when a triangle is needed as a *symbol*, not as a literal polygon.
 * **Typography.** Letters, digits, emoji, infinity marks and pictograms are the field, rather than a caption layer placed over a geometric scaffold. Deep violet, magenta, electric blue, cyan and gold with optional bio green.
-* **Symbolic parentheses.** Display the literal inverse-pair token `)(` whenever that *symbolic* paired-gate mark is intended. Do not silently normalize it to `()`. Keep real `()` punctuation unchanged in programming language calls, math notation, URL/regex syntax and historical evidence.
+* **Canonical inverse syntax.** BINAIUI-authored GENESIS programs use the literal `)(` as their inverse-pair token and never silently normalize it. The GENESIS source language must be parsed as its own language. Conventional host language punctuation is an implementation detail of a separate, isolated interpreter and must not be imposed on GENESIS-authored source. Preserve archival files byte-for-byte rather than silently rewriting the evidence of earlier versions.
 * **Preservation.** Every reference, version, original and earlier study stays recoverable. Existing SVGs may be superseded in active views but old versions remain in Git history; do not imply this Git history preserves missing original user photographs.
 * **Consent / publishing.** Create review branches and tests. No automatic live publication, deployment, original-image upload or rewrite of unrelated repositories.
 
@@ -33,7 +33,7 @@ The frequency names above are symbolic identifiers. Do not label them as experim
 1. Verify hyperbolic curvature coefficient is positive and curvature `−κ` stays negative for supported values.
 2. Verify forward parameter is monotonic in each visible current, with no connecting rungs.
 3. Reject generated triangle polygons / repeated triangle mesh cells in active field assets. Triangle emoji (🔺🔻) are allowed.
-4. Verify the token `)(` remains intact when displayed as a symbol; do not rewrite source-code invocation syntax.
+4. Verify GENESIS source expressions containing `)(` parse, execute deterministically and round-trip byte-for-byte. Reject accidental normalization. Keep legacy host-language files separate from the authored source language.
 5. Verify deterministic replay from a seed and preservation of PNG/SVG export and local original backups.
 6. Preserve all archived examples and pass existing tests before any release.
 
