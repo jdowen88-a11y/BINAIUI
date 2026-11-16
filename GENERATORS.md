@@ -23,7 +23,10 @@ period = 60 s
 seed = 8
 fibers = 18
 phase_offset = π
-rungs = golden-ratio progression
+rungs = none
+visual_geometry = hyperbolic Fermi geodesics
+inverse_source_operator = )(
+triangle_symbols = 🔺 🔻
 ```
 
 Palette names retained in the generator vocabulary:
@@ -47,7 +50,7 @@ strand_A(t) = sin(2πt/60)
 strand_B(t) = sin(2πt/60 + π)
 ```
 
-The dual strands remain phase-opposed while sharing the same period.
+The earlier sinusoidal breathing notation describes phase variation and is retained as historical vocabulary. In active GENESIS visual generation, the paths are distinct non-Euclidean geodesic streams without connecting ladder bars. See `GENESIS_OPEN_FIELD_CONTRACT.md` and `docs/genesis.codex` for the canonical source and geometry.
 
 ## Resource flow
 
