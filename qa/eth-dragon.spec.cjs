@@ -8,8 +8,8 @@ const glyphs=[
   ['DOWN','\\/ ',null],
   ['UP','/\\ ',null],
   ['GUILLEMETS','»«','«»'],
-  ['QUESTION','¿','?'],
-  ['EXCLAMATION','¡','!']
+  ['QUESTION','⸮','?'],
+  ['EXCLAMATION','⹡','!']
 ];
 for(const prefix of ['/','/BINAIUI/']){
   test.describe('ETH DRAGON exact authored grammar at '+prefix,()=>{
@@ -47,16 +47,23 @@ for(const prefix of ['/','/BINAIUI/']){
         expect(result.displayTokens).toContain(token);
       }
       expect(result.parsed.DIAGONALS).toBe('\\/ /\\');
+      expect(result.parsed.QUESTION_SETUP).toBe('MIRROR_HORIZONTAL');
+      expect(result.parsed.EXCLAMATION_SETUP).toBe('MIRROR_HORIZONTAL');
+      expect(result.parsed.QUESTION_FACING).toBe('LEFT');
+      expect(result.parsed.EXCLAMATION_FACING).toBe('LEFT');
+      expect(result.interpreted.sourcePreserved).toBe(true);
       expect(result.parsed.COMPOSITE).toBe('}{][');
       expect(result.runtimeInverse).toBe(')(');
-      expect(authored).toContain('DRAGON_SENTENCE )( 🐉 )( }{][ >< \\/ /\\ »« ¿ ¡');
+      expect(result.interpreted.decodedOperators).toContain('QUESTION');
+      expect(result.interpreted.decodedOperators).toContain('EXCLAMATION');
+      expect(authored).toContain('DRAGON_SENTENCE )( 🐉 )( }{][ >< \\/ /\\ »« ⸮ ⹡');
     });
     test('disallows the old paired tokens in authored source',async({page})=>{
       await page.goto(prefix+'genesis-codex.html');
       const results=await page.evaluate(async()=>{
         const source=await(await fetch('./genesis.dragon')).text();
         const engine=window.ETH_DRAGON;
-        const oldForms=['()','{}','[]','<>','«»','?','!'];
+        const oldForms=['()','{}','[]','<>','«»','?','!','¿','¡'];
         const refused=oldForms.map(token=>{
           try{
             engine.parseSource(source.replace('ROUND )( )(','ROUND )( '+token));
@@ -105,7 +112,7 @@ for(const prefix of ['/','/BINAIUI/']){
     await expect(editor).toBeVisible();
     await expect(editor).toHaveValue(/DRAGON_SENTENCE/);
     const original=await editor.inputValue();
-    await editor.fill(original.replace('QUESTION )( ¿','QUESTION )( ?'));
+    await editor.fill(original.replace('QUESTION )( ⸮','QUESTION )( ¿'));
     await page.locator('#compile-dragon').click();
     await expect(page.locator('#status')).toContainText('ETH DRAGON REJECTED');
     await expect(page.locator('#status')).toHaveAttribute('data-error','true');
@@ -117,5 +124,32 @@ for(const prefix of ['/','/BINAIUI/']){
     const got=page.waitForEvent('download');
     await page.locator('#save-dragon').click();
     expect((await got).suggestedFilename()).toBe('genesis.edited.dragon');
+  });
+}
+
+for(const prefix of ['/','/BINAIUI/']){
+  test('both punctuation operators have working left-mirror setup and canvas fallback at '+prefix,async({page})=>{
+    await page.goto(prefix+'genesis-codex.html');
+    const proof=await page.evaluate(async()=>{
+      const source=await(await fetch('./genesis.dragon')).text();
+      const program=window.ETH_DRAGON.compile(source);
+      const result={orientation:program.orientation,configured:[],pixels:[],tagged:[]};
+      for(const id of ['question-proof','exclamation-proof']){
+        const c=document.getElementById(id);
+        result.configured.push(c.dataset.transform==='mirror-horizontal'&&c.dataset.facing==='left');
+        const data=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+        let painted=false;
+        for(let i=3;i<data.length;i+=4)if(data[i]>0){painted=true;break}
+        result.pixels.push(painted);
+      }
+      const canvas=document.querySelector('#field');
+      result.tagged=[canvas.dataset.questionFacing,canvas.dataset.exclamationFacing,canvas.dataset.punctuationRendering];
+      return result;
+    });
+    expect(proof.configured).toEqual([true,true]);
+    expect(proof.pixels).toEqual([true,true]);
+    expect(proof.tagged).toEqual(['left','left','mirror-vector']);
+    expect(proof.orientation.QUESTION).toEqual({glyph:'⸮',mirrorX:true,facing:'LEFT',setup:'MIRROR_HORIZONTAL',rendering:'custom-vector'});
+    expect(proof.orientation.EXCLAMATION).toEqual({glyph:'⹡',mirrorX:true,facing:'LEFT',setup:'MIRROR_HORIZONTAL',rendering:'custom-vector'});
   });
 }
