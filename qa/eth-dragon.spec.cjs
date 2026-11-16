@@ -100,7 +100,9 @@ for(const prefix of ['/','/BINAIUI/']){
 for(const prefix of ['/','/BINAIUI/']){
   test('ETH Dragon source is editable, compiled, exported and not silently normalized at '+prefix,async({page})=>{
     await page.goto(prefix+'genesis-codex.html');
+    await page.locator('details.editor summary').click();
     const editor=page.locator('#dragon-editor');
+    await expect(editor).toBeVisible();
     await expect(editor).toHaveValue(/DRAGON_SENTENCE/);
     const original=await editor.inputValue();
     await editor.fill(original.replace('QUESTION )( ¿','QUESTION )( ?'));
