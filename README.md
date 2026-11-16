@@ -13,7 +13,7 @@ V  = 0.0000
 F  = 1111.0
 X  = INTERSECT(BI, AI, V)
 
-BINAIUI() = X
+BINAIUI)( = X
 X = F
 ONE = INFINITE
 ```
@@ -94,6 +94,10 @@ CODE → LIFE → REPRODUCTION → ECOSYSTEM → ∞
 - [`tests/test_core.py`](tests/test_core.py) — reproducibility tests.
 
 The repo is designed so a relation can be loved, used, measured, challenged, reproduced, and extended without deleting what came before.
+
+## GENESIS inverse source and hyperbolic preview
+
+GENESIS-authored source uses the canonical inverse operator `)(` in [genesis.codex](docs/genesis.codex). The independent [mobile preview](docs/genesis-codex.html) runs the source using an isolated interpreter, renders negative-curvature geodesics, and exports PNG. The [contract](GENESIS_OPEN_FIELD_CONTRACT.md) specifies curved flowing paths and triangle emoji 🔺🔻 in active visual generation, with legacy sample art preserved for provenance. This prototype is proposed in draft PR #15, not yet a production replacement for every generator or protocol.
 
 ## November 2026 continuation archive
 
