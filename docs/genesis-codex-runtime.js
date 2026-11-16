@@ -8,7 +8,7 @@
   'use strict';
   const DIVIDER = ')(';
   const COLORS = ['#CC00FF','#8B5CFF','#FF29D4','#246BFF','#00E8FF','#FFD75A','#19FF33'];
-  const GLYPHS = ['0','1','8','∞',')(','}{','][','><','\\/','/\\','»«','DRAGON_Q_LEFT','DRAGON_BANG_LEFT','🌀','💜','⚡','🔺','🔻','🐉','ψ','λ','Σ'];
+  const GLYPHS = ['0','1','8','∞',')(','{','][','><','\\/','/\\','»«','DRAGON_Q_LEFT','DRAGON_BANG_LEFT','🌀','💜','⚡','🔺','🔻','🐉','ψ','λ','Σ'];
   const KEYS = ['IDENTITY','GEOMETRY','CURVATURE','INVERSE','TRIANGLES','DNA_RUNGS','TRIANGLE_GRID','FLOW','STREAMS'];
   function parse(source) {
     if (typeof source !== 'string') throw new TypeError('A GENESIS source string is required.');
