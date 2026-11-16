@@ -8,7 +8,7 @@
   'use strict';
   const operators=Object.freeze([
     Object.freeze({key:'ROUND',symbol:')(',legacy:'()',meaning:'inverse entry'}),
-    Object.freeze({key:'CURLY',symbol:'}{',legacy:'{}',meaning:'outward opening'}),
+    Object.freeze({key:'CURLY',symbol:'{',legacy:'}{',meaning:'unclosed outward opening'}),
     Object.freeze({key:'SQUARE',symbol:'][',legacy:'[]',meaning:'paired reciprocal gate'}),
     Object.freeze({key:'ANGLE',symbol:'><',legacy:'<>',meaning:'convergence crossing'}),
     Object.freeze({key:'DOWN',symbol:'\\/',legacy:null,meaning:'divergent current'}),
@@ -23,7 +23,7 @@
   // standalone vector stroke, never as platform-dependent glyph fallback.
   const GLYPH_RENDERING='UNFRAMED_VECTOR_STROKES';
 
-  const legacy=[...operators.filter(x=>x.legacy).map(x=>x.legacy),'¿','¡',String.fromCodePoint(0x2E2E),String.fromCodePoint(0x2E61)];
+  const legacy=[...operators.filter(x=>x.legacy).map(x=>x.legacy),'{}','¿','¡',String.fromCodePoint(0x2E2E),String.fromCodePoint(0x2E61)];
   function glyphTokens(value) {
     if (typeof value!=='string') throw new TypeError('ETH Dragon expression must be text.');
     const tokens=[];
