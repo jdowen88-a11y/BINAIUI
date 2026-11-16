@@ -2,7 +2,7 @@ const {test,expect}=require('@playwright/test');
 
 const glyphs=[
   ['ROUND',')(','()'],
-  ['CURLY','}{','{}'],
+  ['CURLY','{','}{'],
   ['SQUARE','][','[]'],
   ['ANGLE','><','<>'],
   ['DOWN','\\/ ',null],
@@ -52,18 +52,19 @@ for(const prefix of ['/','/BINAIUI/']){
       expect(result.parsed.QUESTION_FACING).toBe('LEFT');
       expect(result.parsed.EXCLAMATION_FACING).toBe('LEFT');
       expect(result.interpreted.sourcePreserved).toBe(true);
-      expect(result.parsed.COMPOSITE).toBe('}{][');
+      expect(result.parsed.COMPOSITE).toBe('{][');
+      expect(result.parsed.CURLY).toBe('{');
       expect(result.runtimeInverse).toBe(')(');
       expect(result.interpreted.decodedOperators).toContain('QUESTION');
       expect(result.interpreted.decodedOperators).toContain('EXCLAMATION');
-      expect(authored).toContain('DRAGON_SENTENCE )( 🐉 )( }{][ >< \\/ /\\ »« DRAGON_Q_LEFT DRAGON_BANG_LEFT');
+      expect(authored).toContain('DRAGON_SENTENCE )( 🐉 )( {][ >< \\/ /\\ »« DRAGON_Q_LEFT DRAGON_BANG_LEFT');
     });
     test('disallows the old paired tokens in authored source',async({page})=>{
       await page.goto(prefix+'genesis-codex.html');
       const results=await page.evaluate(async()=>{
         const source=await(await fetch('./genesis.dragon')).text();
         const engine=window.ETH_DRAGON;
-        const oldForms=['()','{}','[]','<>','«»','?','!','¿','¡',String.fromCodePoint(0x2E2E),String.fromCodePoint(0x2E61)];
+        const oldForms=['()','{}','}{','[]','<>','«»','?','!','¿','¡',String.fromCodePoint(0x2E2E),String.fromCodePoint(0x2E61)];
         const refused=oldForms.map(token=>{
           try{
             engine.parseSource(source.replace('ROUND )( )(','ROUND )( '+token));
