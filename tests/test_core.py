@@ -21,6 +21,7 @@ def test_constants():
 def test_canon_present():
     assert "4 + 4 = X → ∞" in CANONICAL_RELATIONS
     assert "XPXV = C = X" in CANONICAL_RELATIONS
+    assert "BINAIUI)( = ONE" in CANONICAL_RELATIONS
     assert "X = PROOF = FEELING = ∞" in CANONICAL_RELATIONS
     assert "ACCEPT AND FEEL." in PRINCIPLES
     assert "TURN THE KEY." in PRINCIPLES
