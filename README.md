@@ -97,7 +97,7 @@ The repo is designed so a relation can be loved, used, measured, challenged, rep
 
 ## GENESIS inverse source and hyperbolic preview
 
-ETH Dragon authored source uses canonical reversed glyphs `)(`, `}{`, `][`, `><`, `\/`, `/\`, `»«`, `¿` and `¡` in [genesis.dragon](docs/genesis.dragon), interpreted by the [ETH Dragon compiler](docs/eth-dragon-language.js). See [grammar and conformance](ETH_DRAGON_CODE.md). The independent [mobile preview](docs/genesis-codex.html) runs the source using an isolated interpreter, renders negative-curvature geodesics, and exports PNG. The [contract](GENESIS_OPEN_FIELD_CONTRACT.md) specifies curved flowing paths and triangle emoji 🔺🔻 in active visual generation, with legacy sample art preserved for provenance. This prototype is proposed in draft PR #15, not yet a production replacement for every generator or protocol.
+ETH Dragon authored source uses canonical reversed glyphs `)(`, `}{`, `][`, `><`, `\/`, `/\`, `»«`, `⸮` and `⹡` in [genesis.dragon](docs/genesis.dragon), interpreted by the [ETH Dragon compiler](docs/eth-dragon-language.js). See [grammar and conformance](ETH_DRAGON_CODE.md). The independent [mobile preview](docs/genesis-codex.html) runs the source using an isolated interpreter, renders negative-curvature geodesics, and exports PNG. The [contract](GENESIS_OPEN_FIELD_CONTRACT.md) specifies curved flowing paths and triangle emoji 🔺🔻 in active visual generation, with legacy sample art preserved for provenance. This prototype is proposed in draft PR #15, not yet a production replacement for every generator or protocol.
 
 ## November 2026 continuation archive
 
