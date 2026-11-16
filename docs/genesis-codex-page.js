@@ -11,12 +11,24 @@ async function start() {
     const compiled=window.ETH_DRAGON.compile(source);
     if(window.ETH_DRAGON.emit(compiled)!==source)throw new Error('ETH Dragon source failed byte preservation');
     const config=window.BINAIUI_CODEX.parse(source);
+    function paintPunctuationProof(){
+      for(const [id,key] of [['question-proof','QUESTION'],['exclamation-proof','EXCLAMATION']]){
+        const canvas=byId(id);
+        if(!canvas)continue;
+        const ctx=canvas.getContext('2d');
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        window.ETH_DRAGON.paintReversedPunctuation(ctx,key,canvas.width/2,canvas.height/2,54,key==='QUESTION'?'#00E8FF':'#FFD75A');
+        canvas.dataset.facing='left';
+        canvas.dataset.transform='mirror-horizontal';
+      }
+    }
+    paintPunctuationProof();
     byId('curvature').value=String(config.CURVATURE);
     function draw() {
       const K=Number(byId('curvature').value),seed=Number(byId('seed').value);
       window.BINAIUI_CODEX.render(byId('field'),{source,seed,K});
       status.removeAttribute('data-error');
-      status.textContent='ETH DRAGON ACCEPTED • )( }{ ][ >< \\/ /\\ »« ¿ ¡ • curvature '+String(-K)+' • rungs NONE • triangles emoji only';
+      status.textContent='ETH DRAGON ACCEPTED • )( }{ ][ >< \\/ /\\ »« ⸮ ⹡ • BOTH PUNCTUATION GLYPHS MIRRORED LEFT • curvature '+String(-K)+' • rungs NONE • triangles emoji only';
     }
     byId('compile-dragon').onclick=()=>{
       const proposed=byId('dragon-editor').value;
