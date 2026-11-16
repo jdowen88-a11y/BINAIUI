@@ -93,7 +93,7 @@ strand offset = π
 no connecting rungs / no DNA ladder bars
 twin hyperbolic geodesic currents
 code rain
-inverse pairs = )( }{ ][ >< \/ /\ »« ⸮ ⹡
+inverse pairs = )( }{ ][ >< \/ /\ »« DRAGON_Q_LEFT DRAGON_BANG_LEFT
 authored_source = docs/genesis.dragon
 triangles = 🔺 🔻 emoji only
 no repeated triangular mesh
