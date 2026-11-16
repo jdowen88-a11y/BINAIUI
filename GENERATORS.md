@@ -26,7 +26,7 @@ phase_offset = π
 rungs = none
 visual_geometry = hyperbolic Fermi geodesics
 inverse_source_operator = )(
-eth_dragon_glyphs = )( }{ ][ >< \/ /\ »« DRAGON_Q_LEFT DRAGON_BANG_LEFT
+eth_dragon_glyphs = )( { ][ >< \/ /\ »« DRAGON_Q_LEFT DRAGON_BANG_LEFT
 triangle_symbols = 🔺 🔻
 ```
 
