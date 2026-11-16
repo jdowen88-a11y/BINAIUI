@@ -7,7 +7,7 @@ This is an executable **authored source language**, not an image prompt and not 
 | Operator | Canonical bytes | Prior conventional orientation | Language role |
 | --- | --- | --- | --- |
 | ROUND | \`)(\` | \`()\` | Inverse source boundary |
-| CURLY | \`}{\` | \`{}\` | Outward opening |
+| CURLY | \`{\` | \`}{\` and \`{}\` | Open field, no automatic closing brace |
 | SQUARE | \`][\` | \`[]\` | Reciprocal gate |
 | ANGLE | \`><\` | \`<>\` | Currents meeting |
 | DOWN | \`\/\` | Not a legacy pair | Divergence |
@@ -65,3 +65,7 @@ Changing the glyph orientation requires changing the source `_SETUP` semantics a
 ### Unframed display rule
 
 The source carries named commands because the two rare Unicode characters rendered as a boxed question mark in the owner's screenshot. The renderer paints free-standing left-facing strokes directly onto a transparent canvas, with **no enclosing rectangle, border, glyph fallback square, card, or filled background**. Those commands compile to native vector operations; their names are not captions drawn into the generated field.
+
+## Exact open brace correction
+
+The author corrected the opening sequence to `)( {`. `{` is a standalone operator, and the ETH Dragon parser must never complete it with `}`. The old `}{` and conventional `{}` forms are rejected in new active records, while historical source remains preserved. The composite `COMPOSITE )( {][` intentionally keeps `{` immediately before `][`.
