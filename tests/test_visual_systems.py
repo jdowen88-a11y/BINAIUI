@@ -66,3 +66,24 @@ def test_genesis_svg_determinism():
 def test_genesis_bounds():
     with pytest.raises(ValueError):
         generate_svg(streams=0)
+
+def test_genesis_true_hyperbolic_geometry_and_canonical_inverse():
+    from binaiui.genesis_field import metric
+    at_origin = metric(1, 0)
+    off_origin = metric(1, 1)
+    assert at_origin == {"g_uu": 1.0, "g_vv": 1.0, "gaussian_curvature": -1}
+    assert off_origin["g_vv"] > at_origin["g_vv"]
+    svg = generate_svg(seed=808, width=480, height=320, streams=8, symbols=80)
+    assert 'data-geometry="hyperbolicFermiGeodesics"' in svg
+    assert 'data-gaussian-curvature="-1"' in svg
+    assert 'data-inverse=")("' in svg
+    assert "🔺" in svg or "🔻" in svg or ")(" in svg or "∞" in svg
+    assert "<polygon" not in svg
+    assert "golden rungs" not in svg
+
+
+def test_genesis_curvature_rejects_flat_and_nonfinite():
+    from binaiui.genesis_field import metric
+    for value in [0, -1, float("nan"), float("inf")]:
+        with pytest.raises(ValueError):
+            metric(value, 0)
