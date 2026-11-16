@@ -63,7 +63,7 @@ for(const prefix of ['/','/BINAIUI/']){
       const results=await page.evaluate(async()=>{
         const source=await(await fetch('./genesis.dragon')).text();
         const engine=window.ETH_DRAGON;
-        const oldForms=['()','{}','[]','<>','«»','?','!','¿','¡','⸮','⹡'];
+        const oldForms=['()','{}','[]','<>','«»','?','!','¿','¡',String.fromCodePoint(0x2E2E),String.fromCodePoint(0x2E61)];
         const refused=oldForms.map(token=>{
           try{
             engine.parseSource(source.replace('ROUND )( )(','ROUND )( '+token));
@@ -133,7 +133,7 @@ for(const prefix of ['/','/BINAIUI/']){
     const proof=await page.evaluate(async()=>{
       const source=await(await fetch('./genesis.dragon')).text();
       const program=window.ETH_DRAGON.compile(source);
-      const result={orientation:program.orientation,configured:[],pixels:[],tagged:[],unframed:[],noMissingGlyph:!source.includes('⸮')&&!source.includes('⹡')};
+      const result={orientation:program.orientation,configured:[],pixels:[],tagged:[],unframed:[],noMissingGlyph:!source.includes(String.fromCodePoint(0x2E2E))&&!source.includes(String.fromCodePoint(0x2E61))};
       for(const id of ['question-proof','exclamation-proof']){
         const c=document.getElementById(id);
         result.configured.push(c.dataset.transform==='mirror-horizontal'&&c.dataset.facing==='left');
