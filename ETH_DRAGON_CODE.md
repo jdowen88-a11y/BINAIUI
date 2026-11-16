@@ -13,8 +13,8 @@ This is an executable **authored source language**, not an image prompt and not 
 | DOWN | \`\/\` | Not a legacy pair | Divergence |
 | UP | \`/\` | Not a legacy pair | Convergence |
 | GUILLEMETS | \`»«\` | \`«»\` | Reflection |
-| QUESTION | \`¿\` | \`?\` | Query |
-| EXCLAMATION | \`¡\` | \`!\` | Initiation |
+| QUESTION | \`⸮\` (U+2E2E) | \`?\` and \`¿\` | Mirror horizontally; LEFT |
+| EXCLAMATION | \`⹡\` (U+2E61) | \`!\` and \`¡\` | Mirrored asymmetric inverted-wiggly vector; LEFT |
 
 **Critical:** DOWN is a backslash followed by a forward slash. UP is a forward slash followed by a backslash. See the exact bytes in the machine-readable source and tests; Markdown renderers can obscure their escapes.
 
@@ -44,3 +44,20 @@ The old sample images, repository commits and program syntax remain in history. 
 - Compilation and re-emission return an identical source string.
 - Mobile rendering produces two geodesic current groups, with Gaussian curvature \`−κ\`, no crossbars and triangle symbols 🔺🔻 only.
 - No change to GitHub Pages \`main\` until the review branch passes tests and the visual work is approved.
+
+## Explicit glyph orientation setup
+
+The earlier inverted punctuation `¿ ¡` was **not** a directional setup. ETH Dragon now defines the source declarations:
+
+```text
+QUESTION )( ⸮
+QUESTION_SETUP )( MIRROR_HORIZONTAL
+QUESTION_FACING )( LEFT
+EXCLAMATION )( ⹡
+EXCLAMATION_SETUP )( MIRROR_HORIZONTAL
+EXCLAMATION_FACING )( LEFT
+```
+
+The parser rejects the prior punctuation forms in authored source. `⸮` is Unicode U+2E2E REVERSED QUESTION MARK; `⹡` is U+2E61 INVERTED WIGGLY EXCLAMATION MARK in Unicode 18.0. The latter would still appear without clear horizontal direction if shown as a straight exclamation, so the mobile renderer draws **asymmetric curved punctuation under an explicit horizontal mirror transform** without relying on platform font support. Both reversed vector samples appear above the field in the preview. Mobile tests check their painted pixels and orientation tags.
+
+Changing the glyph orientation requires changing the source `_SETUP` semantics and vector rendering together. Historical assets remain unmodified.
