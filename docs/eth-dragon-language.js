@@ -14,12 +14,12 @@
     Object.freeze({key:'DOWN',symbol:'\\/',legacy:null,meaning:'divergent current'}),
     Object.freeze({key:'UP',symbol:'/\\',legacy:null,meaning:'convergent current'}),
     Object.freeze({key:'GUILLEMETS',symbol:'»«',legacy:'«»',meaning:'reflection crossing'}),
-    Object.freeze({key:'QUESTION',symbol:'¿',legacy:'?',meaning:'open query'}),
-    Object.freeze({key:'EXCLAMATION',symbol:'¡',legacy:'!',meaning:'initiation'})
+    Object.freeze({key:'QUESTION',symbol:'⸮',legacy:'?',orientation:'MIRROR_HORIZONTAL',facing:'LEFT',meaning:'reversed open query'}),
+    Object.freeze({key:'EXCLAMATION',symbol:'⹡',legacy:'!',orientation:'MIRROR_HORIZONTAL',facing:'LEFT',meaning:'reversed asymmetric exclamation'})
   ]);
   const byKey=Object.freeze(Object.fromEntries(operators.map(x=>[x.key,x.symbol])));
   const recognized=operators.map(x=>x.symbol).sort((a,b)=>b.length-a.length);
-  const legacy=operators.filter(x=>x.legacy).map(x=>x.legacy);
+  const legacy=[...operators.filter(x=>x.legacy).map(x=>x.legacy),'¿','¡'];
   function glyphTokens(value) {
     if (typeof value!=='string') throw new TypeError('ETH Dragon expression must be text.');
     const tokens=[];
@@ -73,6 +73,11 @@
         throw new SyntaxError('ETH Dragon declaration '+declared+' must equal '+op.symbol);
       }
     }
+    for(const key of ['QUESTION','EXCLAMATION']){
+      if(fields[key+'_SETUP']!=='MIRROR_HORIZONTAL' || fields[key+'_FACING']!=='LEFT'){
+        throw new SyntaxError(key+' must have an explicit left-facing horizontal-mirror setup.');
+      }
+    }
     if (fields.DIAGONALS!==byKey.DOWN+' '+byKey.UP)throw new SyntaxError('Both diagonal currents must stay canonical.');
     if (fields.INVERSE!==byKey.ROUND)throw new SyntaxError('Inverse pair must remain )(.');
     if (fields.TRIANGLES!=='🔺 🔻')throw new SyntaxError('Triangle forms must be emoji.');
@@ -88,6 +93,10 @@
       source:ast.source,
       geometry:ast.fields.GEOMETRY,
       inverse:byKey.ROUND,
+      orientation:Object.freeze({
+        QUESTION:Object.freeze({glyph:byKey.QUESTION,mirrorX:true,facing:'LEFT',setup:ast.fields.QUESTION_SETUP,rendering:'custom-vector'}),
+        EXCLAMATION:Object.freeze({glyph:byKey.EXCLAMATION,mirrorX:true,facing:'LEFT',setup:ast.fields.EXCLAMATION_SETUP,rendering:'custom-vector'})
+      }),
       operations:Object.freeze(ast.instructions.map(line=>Object.freeze({
         field:line.key,
         glyphStream:Object.freeze(line.tokens.map(x=>x.glyph)),
@@ -111,6 +120,42 @@
       sourcePreserved:emit(compiled)===source
     });
   }
-  root.ETH_DRAGON=Object.freeze({operators,byKey,glyphTokens,parseSource,compile,emit,interpret});
+
+  function paintReversedPunctuation(ctx,key,x,y,size,color='#00E8FF') {
+    const index=operators.find(item=>item.key===key);
+    if(!index || !['QUESTION','EXCLAMATION'].includes(key))throw new TypeError('Unknown reversible punctuation operator');
+    if(!ctx || typeof ctx.save!=='function')throw new TypeError('Canvas context required');
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.scale(-1,1);
+    ctx.strokeStyle=color;
+    ctx.fillStyle=color;
+    ctx.lineWidth=Math.max(1.4,size*0.115);
+    ctx.lineCap='round';
+    ctx.lineJoin='round';
+    ctx.beginPath();
+    if(key==='QUESTION') {
+      // Conventional question-mark outline is mirrored horizontally in display.
+      ctx.moveTo(-.36*size,-.25*size);
+      ctx.bezierCurveTo(-.32*size,-.66*size,.50*size,-.70*size,.44*size,-.23*size);
+      ctx.bezierCurveTo(.43*size,.07*size,.02*size,.13*size,.03*size,.32*size);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(.03*size,.58*size,.07*size,0,Math.PI*2);
+    } else {
+      // An asymmetric curved exclamation visibly changes when mirrored,
+      // unlike the symmetric straight line in standard exclamation punctuation.
+      ctx.moveTo(-.22*size,-.65*size);
+      ctx.bezierCurveTo(.45*size,-.55*size,-.18*size,-.20*size,.25*size,.06*size);
+      ctx.bezierCurveTo(.39*size,.16*size,.19*size,.28*size,.09*size,.34*size);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(.09*size,.59*size,.07*size,0,Math.PI*2);
+    }
+    ctx.fill();
+    ctx.restore();
+  }
+
+  root.ETH_DRAGON=Object.freeze({operators,byKey,glyphTokens,parseSource,compile,emit,interpret,paintReversedPunctuation});
   if (typeof module!=='undefined'&&module.exports)module.exports=root.ETH_DRAGON;
 })(typeof window==='undefined'?globalThis:window);
