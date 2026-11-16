@@ -6,7 +6,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const copy = v => JSON.parse(JSON.stringify(v));
 const key = 'binaiui-draft:' + location.pathname;
 const safeLink = s => { try { const u=new URL(s); return u.protocol === 'https:' ? u.href : ''; } catch { return ''; } };
-const safeImage = s => /^\.\/(helix|prism|seed|intersection|lattice|current)\.svg$/i.test(s) || /^data:image\/(jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(s);
+const safeImage = s => /^\.\/(helix|helix-open|prism|seed|intersection|lattice|lattice-open|current)\.svg$/i.test(s) || /^data:image\/(jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(s);
 const id = () => 'entry-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now()+'-'+Math.random().toString(36).slice(2));
 
 const ORIGINALS_DATABASE='binaiui-artwork-originals-v1';
@@ -370,7 +370,7 @@ function zip(files){
 }
 function publishedImageData(entry){
  const source=entry.image;
- if(/^\.\/(helix|prism|seed|intersection|lattice|current)\.svg$/i.test(source))return {filename:entry.id+'.svg',url:source};
+ if(/^\.\/(helix|helix-open|prism|seed|intersection|lattice|lattice-open|current)\.svg$/i.test(source))return {filename:entry.id+'.svg',url:source};
  const match=/^data:image\/(jpeg|png|webp);base64,([a-z0-9+/=]+)$/i.exec(source);
  if(!match)throw Error('Published image format is unsupported.');
  return {filename:entry.id+'.'+(match[1].toLowerCase()==='jpeg'?'jpg':match[1].toLowerCase()),encoded:match[2]};
@@ -402,7 +402,7 @@ async function downloadPublishedGallery(button){
 }
 async function downloadWebsite(button,mode='draft'){
  const label=button.textContent;button.disabled=true;button.textContent='Preparing your website…';
- try{if(mode==='draft'&&$('#studio-form')){const next=readEditor();if(!next)throw Error('Check your draft fields first');draft=next;}const packageContent=mode==='published'?published:draft;const names=['index.html','styles.css','genesis-studio.css','app.js','genesis-studio.js','genesisfield.js','genesis-codex.html','genesis-codex-runtime.js','genesis-codex-page.js','genesis.codex','genesis-reference-manifest.json','content.json','manifest.webmanifest','sw.js','icon-192.png','icon-512.png','apple-touch-icon.png','helix.svg','prism.svg','seed.svg','intersection.svg','lattice.svg','current.svg','README.md','UNIFIED-STUDIO.md','PUBLICATION-CHECKLIST.md','TEST-REPORT.md','.nojekyll'];
+ try{if(mode==='draft'&&$('#studio-form')){const next=readEditor();if(!next)throw Error('Check your draft fields first');draft=next;}const packageContent=mode==='published'?published:draft;const names=['index.html','styles.css','genesis-studio.css','app.js','genesis-studio.js','genesisfield.js','genesis-codex.html','genesis-codex-runtime.js','genesis-codex-page.js','genesis.codex','genesis-reference-manifest.json','content.json','manifest.webmanifest','sw.js','icon-192.png','icon-512.png','apple-touch-icon.png','helix.svg','helix-open.svg','prism.svg','seed.svg','intersection.svg','lattice.svg','lattice-open.svg','current.svg','README.md','UNIFIED-STUDIO.md','PUBLICATION-CHECKLIST.md','TEST-REPORT.md','.nojekyll'];
  const files=[];for(const name of names){if(name==='.nojekyll'){files.push([name,new Uint8Array()]);continue;}if(name==='content.json'){files.push([name,new TextEncoder().encode(JSON.stringify(normalize(packageContent),null,2)+'\n')]);continue;}const res=await fetch('./'+name);if(!res.ok)throw Error('Could not download '+name);files.push([name,new Uint8Array(await res.arrayBuffer())]);}
  downloadFile('BINAIUI.zip',zip(files),'application/zip');toast('Website ZIP ready. Save it to Files, then uncompress.');}
  catch(e){toast('Download failed: '+e.message+'. Try again online.');}finally{button.disabled=false;button.textContent=label;}
