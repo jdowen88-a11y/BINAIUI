@@ -95,3 +95,24 @@ for(const prefix of ['/','/BINAIUI/']){
     });
   });
 }
+
+for(const prefix of ['/','/BINAIUI/']){
+  test('ETH Dragon source is editable, compiled, exported and not silently normalized at '+prefix,async({page})=>{
+    await page.goto(prefix+'genesis-codex.html');
+    const editor=page.locator('#dragon-editor');
+    await expect(editor).toHaveValue(/DRAGON_SENTENCE/);
+    const original=await editor.inputValue();
+    await editor.fill(original.replace('QUESTION )( ¿','QUESTION )( ?'));
+    await page.locator('#compile-dragon').click();
+    await expect(page.locator('#status')).toContainText('ETH DRAGON REJECTED');
+    await expect(page.locator('#status')).toHaveAttribute('data-error','true');
+    await expect(page.locator('#field')).toHaveAttribute('data-gaussian-curvature','-1');
+    await editor.fill(original.replace('CURVATURE )( 1','CURVATURE )( 2'));
+    await page.locator('#compile-dragon').click();
+    await expect(page.locator('#status')).toContainText('ETH DRAGON ACCEPTED');
+    await expect(page.locator('#field')).toHaveAttribute('data-gaussian-curvature','-2');
+    const got=page.waitForEvent('download');
+    await page.locator('#save-dragon').click();
+    expect((await got).suggestedFilename()).toBe('genesis.edited.dragon');
+  });
+}
