@@ -28,7 +28,7 @@ async function start() {
       const K=Number(byId('curvature').value),seed=Number(byId('seed').value);
       window.BINAIUI_CODEX.render(byId('field'),{source,seed,K});
       status.removeAttribute('data-error');
-      status.textContent='ETH DRAGON ACCEPTED • )( }{ ][ >< \\/ /\\ »« ⸮ ⹡ • BOTH PUNCTUATION GLYPHS MIRRORED LEFT • curvature '+String(-K)+' • rungs NONE • triangles emoji only';
+      status.textContent='ETH DRAGON ACCEPTED • )( }{ ][ >< \\/ /\\ »« • DRAGON_Q_LEFT + DRAGON_BANG_LEFT • OPEN VECTOR PATHS, NO FRAMES • curvature '+String(-K)+' • rungs NONE • triangles emoji only';
     }
     byId('compile-dragon').onclick=()=>{
       const proposed=byId('dragon-editor').value;
