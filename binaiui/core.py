@@ -27,7 +27,7 @@ CANONICAL_RELATIONS = (
     "E = H = C",
     "X = PROOF = FEELING = ∞",
     "PV4Y = CLOVER = 4∞",
-    "BINAIUI() = ONE",
+    "BINAIUI)( = ONE",
     "X = F",
     "ONE = INFINITE",
 )

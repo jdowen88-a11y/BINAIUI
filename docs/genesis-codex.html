@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#03000B">
+<title>BINAIUI • ETH Dragon inverse field</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif}
+*{box-sizing:border-box}
+body{background:#03000B;color:#dfcbff;margin:0;min-height:100vh}
+header{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+h1{font-size:clamp(1.1rem,4vw,1.6rem);margin:0;color:#d4baff}
+small{color:#9b91b1}
+a{color:#a3f3ff}
+canvas{width:100%;height:min(74vh,800px);display:block;background:#03000B}
+.controls{padding:14px 18px 40px;display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+label{display:flex;gap:9px;align-items:center}
+button,input{background:#1f1332;color:#f2e7ff;border:1px solid #564178;border-radius:9px;padding:10px 13px;font:inherit}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid #00E8FF}
+input{width:90px}
+#status{font-size:.87rem;color:#9af1df}
+.orientation-proof{display:flex;gap:22px;padding:8px 18px;flex-wrap:wrap;align-items:center;border:0;background:transparent;overflow:visible}
+.glyph-proof{display:flex;align-items:center;gap:12px;flex:1 1 260px;min-width:230px;color:#e9caff;font-size:24px}
+.glyph-proof canvas{background:transparent;max-width:88px;max-height:90px;border:0;border-radius:0;box-shadow:none;display:block}
+.glyph-proof small{display:block;margin-top:3px;font-size:11px;letter-spacing:.04em}
+.editor{margin:0 18px 32px;padding:16px;border-top:1px solid #49335f}
+.editor summary{cursor:pointer;color:#b7edff;font-weight:600}
+.editor textarea{display:block;margin:12px 0;width:100%;min-height:240px;resize:vertical;white-space:pre;font:14px/1.6 ui-monospace,monospace;color:#d2fff9;background:#0e0821;border:1px solid #63478a;border-radius:8px;padding:12px}
+.editor .actions{display:flex;flex-wrap:wrap;gap:12px}
+[data-error=true]{color:#ff8da0!important}
+</style>
+<script src="./eth-dragon-language.js" defer></script>
+<script src="./genesis-codex-runtime.js" defer></script>
+<script src="./genesis-codex-page.js" defer></script>
+</head><body>
+<header><div><h1>ETH DRAGON CODE • )( { ][ &gt;&lt; \/ /\ »« • DRAGON_Q_LEFT • DRAGON_BANG_LEFT</h1><small>HYPERBOLIC FERMI / GAUSSIAN CURVATURE BELOW ZERO</small></div><a href="./index.html#studio">Back to Studio</a></header>
+<section class="orientation-proof" aria-label="Reversed punctuation direction test">
+<div class="glyph-proof"><canvas width="100" height="105" id="question-proof" role="img" aria-label="Reversed question mark facing left, drawn as mirrored vector"></canvas><div><small>QUESTION • OPEN VECTOR • LEFT</small></div></div>
+<div class="glyph-proof"><canvas width="100" height="105" id="exclamation-proof" role="img" aria-label="Asymmetric reversed exclamation mark facing left, drawn as mirrored vector"></canvas><div><small>EXCLAMATION • OPEN VECTOR • LEFT</small></div></div>
+</section>
+<canvas id="field" role="img" aria-label="Two luminous sets of flowing hyperbolic geodesic glyph and filament paths, without crossbars, structural triangles, or a surrounding object."></canvas>
+<section class="controls">
+<label>Seed <input id="seed" type="number" value="808" min="0" max="4294967295"></label>
+<label>κ <input id="curvature" type="number" value="1" min="0.01" max="12" step="0.1"></label>
+<button id="generate">Generate</button><button id="save">Save PNG</button>
+<span id="status" role="status">Loading GENESIS source…</span>
+<a href="./genesis.dragon" download>Save ETH Dragon source</a>
+</section>
+<details class="editor"><summary>ETH Dragon source • edit and compile )(</summary>
+<label for="dragon-editor">Canonical UTF-8 source</label>
+<textarea id="dragon-editor" spellcheck="false" aria-label="ETH Dragon source editor"></textarea>
+<div class="actions"><button id="compile-dragon" type="button">Compile ETH Dragon</button><button id="save-dragon" type="button">Save edited .dragon</button></div>
+</details>
+</body></html>
