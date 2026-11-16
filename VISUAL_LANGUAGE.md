@@ -90,9 +90,13 @@ period = 60 seconds
 seed = 8
 fiber_count = 18
 strand offset = π
-golden rungs
-dual-sine DNA
+no connecting rungs / no DNA ladder bars
+twin hyperbolic geodesic currents
 code rain
+inverse pair = )(
+triangles = 🔺 🔻 emoji only
+no repeated triangular mesh
+negative Gaussian curvature = -κ, κ > 0
 ```
 
 ## Structure rule
