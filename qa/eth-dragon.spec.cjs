@@ -8,8 +8,8 @@ const glyphs=[
   ['DOWN','\\/ ',null],
   ['UP','/\\ ',null],
   ['GUILLEMETS','»«','«»'],
-  ['QUESTION','⸮','?'],
-  ['EXCLAMATION','⹡','!']
+  ['QUESTION','DRAGON_Q_LEFT','?'],
+  ['EXCLAMATION','DRAGON_BANG_LEFT','!']
 ];
 for(const prefix of ['/','/BINAIUI/']){
   test.describe('ETH DRAGON exact authored grammar at '+prefix,()=>{
@@ -56,14 +56,14 @@ for(const prefix of ['/','/BINAIUI/']){
       expect(result.runtimeInverse).toBe(')(');
       expect(result.interpreted.decodedOperators).toContain('QUESTION');
       expect(result.interpreted.decodedOperators).toContain('EXCLAMATION');
-      expect(authored).toContain('DRAGON_SENTENCE )( 🐉 )( }{][ >< \\/ /\\ »« ⸮ ⹡');
+      expect(authored).toContain('DRAGON_SENTENCE )( 🐉 )( }{][ >< \\/ /\\ »« DRAGON_Q_LEFT DRAGON_BANG_LEFT');
     });
     test('disallows the old paired tokens in authored source',async({page})=>{
       await page.goto(prefix+'genesis-codex.html');
       const results=await page.evaluate(async()=>{
         const source=await(await fetch('./genesis.dragon')).text();
         const engine=window.ETH_DRAGON;
-        const oldForms=['()','{}','[]','<>','«»','?','!','¿','¡'];
+        const oldForms=['()','{}','[]','<>','«»','?','!','¿','¡','⸮','⹡'];
         const refused=oldForms.map(token=>{
           try{
             engine.parseSource(source.replace('ROUND )( )(','ROUND )( '+token));
@@ -112,7 +112,7 @@ for(const prefix of ['/','/BINAIUI/']){
     await expect(editor).toBeVisible();
     await expect(editor).toHaveValue(/DRAGON_SENTENCE/);
     const original=await editor.inputValue();
-    await editor.fill(original.replace('QUESTION )( ⸮','QUESTION )( ¿'));
+    await editor.fill(original.replace('QUESTION )( DRAGON_Q_LEFT','QUESTION )( ¿'));
     await page.locator('#compile-dragon').click();
     await expect(page.locator('#status')).toContainText('ETH DRAGON REJECTED');
     await expect(page.locator('#status')).toHaveAttribute('data-error','true');
@@ -133,10 +133,12 @@ for(const prefix of ['/','/BINAIUI/']){
     const proof=await page.evaluate(async()=>{
       const source=await(await fetch('./genesis.dragon')).text();
       const program=window.ETH_DRAGON.compile(source);
-      const result={orientation:program.orientation,configured:[],pixels:[],tagged:[]};
+      const result={orientation:program.orientation,configured:[],pixels:[],tagged:[],unframed:[],noMissingGlyph:!source.includes('⸮')&&!source.includes('⹡')};
       for(const id of ['question-proof','exclamation-proof']){
         const c=document.getElementById(id);
         result.configured.push(c.dataset.transform==='mirror-horizontal'&&c.dataset.facing==='left');
+        const css=getComputedStyle(c);
+        result.unframed.push(css.borderTopWidth==='0px'&&css.borderLeftWidth==='0px'&&css.backgroundColor==='rgba(0, 0, 0, 0)'&&css.boxShadow==='none');
         const data=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
         let painted=false;
         for(let i=3;i<data.length;i+=4)if(data[i]>0){painted=true;break}
@@ -147,9 +149,11 @@ for(const prefix of ['/','/BINAIUI/']){
       return result;
     });
     expect(proof.configured).toEqual([true,true]);
+    expect(proof.unframed).toEqual([true,true]);
+    expect(proof.noMissingGlyph).toBe(true);
     expect(proof.pixels).toEqual([true,true]);
     expect(proof.tagged).toEqual(['left','left','mirror-vector']);
-    expect(proof.orientation.QUESTION).toEqual({glyph:'⸮',mirrorX:true,facing:'LEFT',setup:'MIRROR_HORIZONTAL',rendering:'custom-vector'});
-    expect(proof.orientation.EXCLAMATION).toEqual({glyph:'⹡',mirrorX:true,facing:'LEFT',setup:'MIRROR_HORIZONTAL',rendering:'custom-vector'});
+    expect(proof.orientation.QUESTION).toEqual({glyph:'DRAGON_Q_LEFT',mirrorX:true,facing:'LEFT',setup:'MIRROR_HORIZONTAL',rendering:'unframed-vector'});
+    expect(proof.orientation.EXCLAMATION).toEqual({glyph:'DRAGON_BANG_LEFT',mirrorX:true,facing:'LEFT',setup:'MIRROR_HORIZONTAL',rendering:'unframed-vector'});
   });
 }
