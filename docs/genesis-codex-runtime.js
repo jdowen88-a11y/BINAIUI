@@ -1,4 +1,4 @@
-/* GENESIS CODEX interpreter. The authored language lives in genesis.codex.
+/* ETH Dragon geometry runtime adapter. The authored language lives in genesis.dragon; genesis.codex is a retained alias.
    JavaScript here is an isolated host/runtime, not a GENESIS source requirement.
    Geometry: Fermi coordinates in a complete hyperbolic plane.
    ds squared = du squared + cosh squared(sqrt(k) u) dv squared.
