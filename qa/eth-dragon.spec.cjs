@@ -47,8 +47,9 @@ for(const prefix of ['/','/BINAIUI/']){
         expect(result.displayTokens).toContain(token);
       }
       expect(result.parsed.DIAGONALS).toBe('\\/ /\\');
+      expect(result.parsed.COMPOSITE).toBe('}{][');
       expect(result.runtimeInverse).toBe(')(');
-      expect(authored).toContain('DRAGON_SENTENCE )( 🐉 )( }{ ][ >< \\/ /\\ »« ¿ ¡');
+      expect(authored).toContain('DRAGON_SENTENCE )( 🐉 )( }{][ >< \\/ /\\ »« ¿ ¡');
     });
     test('disallows the old paired tokens in authored source',async({page})=>{
       await page.goto(prefix+'genesis-codex.html');
