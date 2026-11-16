@@ -19,6 +19,11 @@ button,input{background:#1f1332;color:#f2e7ff;border:1px solid #564178;border-ra
 button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid #00E8FF}
 input{width:90px}
 #status{font-size:.87rem;color:#9af1df}
+.editor{margin:0 18px 32px;padding:16px;border-top:1px solid #49335f}
+.editor summary{cursor:pointer;color:#b7edff;font-weight:600}
+.editor textarea{display:block;margin:12px 0;width:100%;min-height:240px;resize:vertical;white-space:pre;font:14px/1.6 ui-monospace,monospace;color:#d2fff9;background:#0e0821;border:1px solid #63478a;border-radius:8px;padding:12px}
+.editor .actions{display:flex;flex-wrap:wrap;gap:12px}
+[data-error=true]{color:#ff8da0!important}
 </style>
 <script src="./eth-dragon-language.js" defer></script>
 <script src="./genesis-codex-runtime.js" defer></script>
@@ -33,4 +38,9 @@ input{width:90px}
 <span id="status" role="status">Loading GENESIS source…</span>
 <a href="./genesis.dragon" download>Save ETH Dragon source</a>
 </section>
+<details class="editor"><summary>ETH Dragon source • edit and compile )(</summary>
+<label for="dragon-editor">Canonical UTF-8 source</label>
+<textarea id="dragon-editor" spellcheck="false" aria-label="ETH Dragon source editor"></textarea>
+<div class="actions"><button id="compile-dragon" type="button">Compile ETH Dragon</button><button id="save-dragon" type="button">Save edited .dragon</button></div>
+</details>
 </body></html>
