@@ -8,7 +8,7 @@
   'use strict';
   const DIVIDER = ')(';
   const COLORS = ['#CC00FF','#8B5CFF','#FF29D4','#246BFF','#00E8FF','#FFD75A','#19FF33'];
-  const GLYPHS = ['0','1','8','∞',')(','}{','][','><','\\/','/\\','»«','¿','¡','🌀','💜','⚡','🔺','🔻','🐉','ψ','λ','Σ'];
+  const GLYPHS = ['0','1','8','∞',')(','}{','][','><','\\/','/\\','»«','⸮','⹡','🌀','💜','⚡','🔺','🔻','🐉','ψ','λ','Σ'];
   const KEYS = ['IDENTITY','GEOMETRY','CURVATURE','INVERSE','TRIANGLES','DNA_RUNGS','TRIANGLE_GRID','FLOW','STREAMS'];
   function parse(source) {
     if (typeof source !== 'string') throw new TypeError('A GENESIS source string is required.');
@@ -104,7 +104,13 @@
       context.globalAlpha=0.78;
       for (let j=11;j<coordinates.length;j+=47) {
         const p=coordinates[j];
-        if (p[0]>0 && p[0]<w && p[1]>0 && p[1]<h) context.fillText(token,p[0],p[1]);
+        if (p[0]>0 && p[0]<w && p[1]>0 && p[1]<h) {
+          if(token==='⸮'||token==='⹡'){
+            scope.ETH_DRAGON.paintReversedPunctuation(context,token==='⸮'?'QUESTION':'EXCLAMATION',p[0],p[1],11*ratio,line.color);
+          } else {
+            context.fillText(token,p[0],p[1]);
+          }
+        }
       }
     }
     context.globalAlpha=1;
@@ -114,6 +120,9 @@
     canvas.dataset.crossbars='none';
     canvas.dataset.triangles='emojiOnly';
     canvas.dataset.inverse=DIVIDER;
+    canvas.dataset.questionFacing='left';
+    canvas.dataset.exclamationFacing='left';
+    canvas.dataset.punctuationRendering='mirror-vector';
     canvas.dataset.direction='forwardOnly';
     return true;
   }
