@@ -23,7 +23,7 @@
   // standalone vector stroke, never as platform-dependent glyph fallback.
   const GLYPH_RENDERING='UNFRAMED_VECTOR_STROKES';
 
-  const legacy=[...operators.filter(x=>x.legacy).map(x=>x.legacy),'¿','¡','⸮','⹡'];
+  const legacy=[...operators.filter(x=>x.legacy).map(x=>x.legacy),'¿','¡',String.fromCodePoint(0x2E2E),String.fromCodePoint(0x2E61)];
   function glyphTokens(value) {
     if (typeof value!=='string') throw new TypeError('ETH Dragon expression must be text.');
     const tokens=[];
