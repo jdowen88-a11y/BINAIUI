@@ -4,9 +4,11 @@ const byId=id=>document.getElementById(id);
 async function start() {
   const status=byId('status');
   try {
-    const request=await fetch('./genesis.codex',{cache:'no-cache'});
+    const request=await fetch('./genesis.dragon',{cache:'no-cache'});
     if(!request.ok)throw new Error('GENESIS source unavailable');
     source=await request.text();
+    const compiled=window.ETH_DRAGON.compile(source);
+    if(window.ETH_DRAGON.emit(compiled)!==source)throw new Error('ETH Dragon source failed byte preservation');
     const config=window.BINAIUI_CODEX.parse(source);
     byId('curvature').value=String(config.CURVATURE);
     function draw() {
