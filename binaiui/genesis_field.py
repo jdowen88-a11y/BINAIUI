@@ -1,23 +1,67 @@
-"""GENESIS OPEN FIELD deterministic SVG generator.
+"""GENESIS OPEN FIELD deterministic hyperbolic SVG renderer.
 
-The symbols make the paths; no central enclosure, orb or added labels.
-Standalone, dependency-free and never writes unless the caller explicitly saves.
+The authored language is docs/genesis.codex and uses the inverse pair )(.
+This Python module is a separate runtime adapter, not the canonical syntax.
+Geometry is the hyperbolic plane in Fermi coordinates:
+    ds squared = du squared + cosh(sqrt(k) * u) squared * dv squared
+with constant Gaussian curvature -k for strictly positive k.
+Filaments follow numerically integrated geodesics, not flat Bezier splines.
+No triangles, connecting rungs or central enclosing structures are generated.
 """
 from __future__ import annotations
-from hashlib import sha256
-from math import cos, sin, pi, atan2, degrees
-import random
-from xml.sax.saxutils import escape
 
-PALETTE = ("#ef4fff", "#8d57ff", "#0cbeff", "#00e8f2", "#ffca73", "#bc2aff")
-GLYPHS = "01689∞{}[]<>∑λπφ∴∇ΩXCVAI+*/="
-def _bezier(p0, p1, p2, p3, t):
-    u = 1.0 - t
-    return (u*u*u*p0[0] + 3*u*u*t*p1[0] + 3*u*t*t*p2[0] + t*t*t*p3[0],
-            u*u*u*p0[1] + 3*u*u*t*p1[1] + 3*u*t*t*p2[1] + t*t*t*p3[1])
+from hashlib import sha256
+from math import cosh, sinh, sqrt, tanh
+from xml.sax.saxutils import escape
+import random
+
+PALETTE = ("#CC00FF", "#885CFF", "#FF27DC", "#246BFF", "#00E8FF", "#FFD75A", "#19FF33")
+GLYPHS = ("0", "1", "8", "∞", ")(", "ψ", "λ", "Σ", "🔺", "🔻", "⚡", "🐉")
+
+
+def _derivative(curvature: float, state: tuple[float, float, float, float]) -> tuple[float, float, float, float]:
+    u, _v, du, dv = state
+    q = sqrt(curvature)
+    w = q * u
+    return (du, dv, q * sinh(w) * cosh(w) * dv * dv, -2 * q * tanh(w) * du * dv)
+
+
+def _step(curvature: float, state: tuple[float, float, float, float], size: float) -> tuple[float, float, float, float]:
+    def shift(values: tuple[float, ...], change: tuple[float, ...], amount: float) -> tuple[float, ...]:
+        return tuple(a + amount * b for a, b in zip(values, change))
+    a = _derivative(curvature, state)
+    b = _derivative(curvature, shift(state, a, size / 2))
+    c = _derivative(curvature, shift(state, b, size / 2))
+    d = _derivative(curvature, shift(state, c, size))
+    return tuple(s + size * (p + 2 * q + 2 * r + t) / 6 for s, p, q, r, t in zip(state, a, b, c, d))
+
+
+def metric(curvature: float, u: float) -> dict[str, float]:
+    """Positive-definite hyperbolic Fermi metric, with curvature -k."""
+    if not 0 < curvature <= 12:
+        raise ValueError("Curvature magnitude must be positive and at most 12")
+    if not -5 < u < 5:
+        raise ValueError("Coordinate out of supported range")
+    return {"g_uu": 1.0, "g_vv": cosh(sqrt(curvature) * u) ** 2, "gaussian_curvature": -curvature}
+
+
+def _trace(curvature: float, u: float, du: float, dv: float, max_steps: int = 345) -> list[tuple[float, float]]:
+    state = (u, -2.65, du, dv / cosh(sqrt(curvature) * u))
+    points: list[tuple[float, float]] = []
+    for _ in range(max_steps):
+        if abs(state[0]) > 3.6 or abs(state[1]) > 5:
+            break
+        points.append((state[0], state[1]))
+        if state[1] > 2.65:
+            break
+        state = _step(curvature, state, 0.0155)
+    return points
+
 
 def generate_svg(seed: int = 8, width: int = 1280, height: int = 720,
-                 streams: int = 78, symbols: int = 520) -> str:
+                 streams: int = 78, symbols: int = 520,
+                 curvature: float = 1.0) -> str:
+    """Generate an open-field SVG from geodesic currents and glyph filaments."""
     for value, low, high, name in ((width, 320, 4096, "width"),
                                    (height, 240, 4096, "height"),
                                    (streams, 1, 250, "streams"),
@@ -26,58 +70,64 @@ def generate_svg(seed: int = 8, width: int = 1280, height: int = 720,
             raise ValueError(f"{name} must be integer in {low}..{high}")
     if type(seed) is not int:
         raise TypeError("seed must be an integer")
+    if not isinstance(curvature, (int, float)) or isinstance(curvature, bool):
+        raise TypeError("Curvature magnitude must be numeric")
+    metric(float(curvature), 0)
     rng = random.Random(seed)
-    chunks = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="{width}" height="{height}">',
-              '<defs><radialGradient id="space"><stop stop-color="#13052f"/><stop offset="1" stop-color="#02020e"/></radialGradient>',
-              '<filter id="aurora" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4"/></filter></defs>',
-              f'<rect width="{width}" height="{height}" fill="url(#space)"/>']
-    # Distributed star seed, not an imposed focal point.
-    for _ in range(max(150, streams * 5)):
+    parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" '
+        f'width="{width}" height="{height}" data-geometry="hyperbolicFermiGeodesics" '
+        f'data-gaussian-curvature="-{float(curvature):g}" data-inverse=")(">',
+        '<defs><linearGradient id="space" x2="1" y2="1"><stop stop-color="#110724"/>'
+        '<stop offset=".55" stop-color="#0b1134"/><stop offset="1" stop-color="#02020d"/>'
+        '</linearGradient><filter id="glow" x="-45%" y="-45%" width="190%" height="190%">'
+        '<feGaussianBlur stdDeviation="4"/></filter></defs>',
+        f'<rect width="{width}" height="{height}" fill="url(#space)"/>'
+    ]
+    for index in range(max(160, streams * 4)):
         x, y = rng.uniform(0, width), rng.uniform(0, height)
-        r = rng.choice((0.25, 0.35, 0.65, 0.85))
-        color = rng.choice(PALETTE)
-        chunks.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{r}" fill="{color}" opacity=".67"/>')
-    filaments = []
+        parts.append(
+            f'<circle cx="{x:.2f}" cy="{y:.2f}" r="{rng.uniform(.2,1.1):.2f}" '
+            f'fill="{PALETTE[index % len(PALETTE)]}" opacity=".6"/>'
+        )
+    visible_paths = []
     for index in range(streams):
-        # The wide endpoints travel outside the viewport on purpose.
-        y0 = rng.uniform(-0.4*height, 1.4*height)
-        y3 = rng.uniform(-0.3*height, 1.3*height)
-        x0 = rng.uniform(-0.8*width, 0.2*width)
-        x3 = rng.uniform(0.8*width, 1.8*width)
-        p0, p3 = (x0, y0), (x3, y3)
-        p1 = (rng.uniform(0, width), rng.uniform(-0.3*height, 1.3*height))
-        p2 = (rng.uniform(0, width), rng.uniform(-0.3*height, 1.3*height))
-        color = PALETTE[index % len(PALETTE)]
-        path = f'M {x0:.1f} {y0:.1f} C {p1[0]:.1f} {p1[1]:.1f} {p2[0]:.1f} {p2[1]:.1f} {x3:.1f} {y3:.1f}'
-        chunks.append(f'<path d="{path}" fill="none" stroke="{color}" stroke-width="5" opacity=".16" filter="url(#aurora)"/>')
-        chunks.append(f'<path d="{path}" fill="none" stroke="{color}" stroke-width="{rng.uniform(.5,1.4):.2f}" opacity=".8"/>')
-        filaments.append((p0, p1, p2, p3, color))
-    for _ in range(symbols):
-        p0, p1, p2, p3, color = rng.choice(filaments)
-        t = rng.random()
-        x, y = _bezier(p0, p1, p2, p3, t)
-        if not (-20 <= x <= width+20 and -20 <= y <= height+20):
+        group = index % 2
+        initial_u = (-.35 if group == 0 else .35) + rng.uniform(-.23, .23)
+        initial_du = rng.uniform(-.08, .08)
+        initial_dv = rng.uniform(.82, 1.03)
+        points = _trace(float(curvature), initial_u, initial_du, initial_dv)
+        if len(points) < 2:
             continue
-        delta = 0.001
-        before = _bezier(p0, p1, p2, p3, max(t-delta,0))
-        after = _bezier(p0, p1, p2, p3, min(t+delta,1))
-        angle = degrees(atan2(after[1]-before[1], after[0]-before[0]))
-        char = escape(rng.choice(GLYPHS))
+        # Fermi coordinate projection is simply a viewport crop of curved space.
+        # The metric is used in the geodesic calculation above, not claimed
+        # to be an isometric projection onto a flat image.
+        def projection(p: tuple[float, float]) -> tuple[float, float]:
+            u, v = p
+            return ((v + 2.65) / 5.3 * width, (1.25 - u) / 2.5 * height)
+        projected = [projection(p) for p in points]
+        d = "M " + " L ".join(f"{x:.2f} {y:.2f}" for x, y in projected)
+        color = PALETTE[index % len(PALETTE)]
+        parts.append(f'<path d="{d}" fill="none" stroke="{color}" '
+                     'stroke-width="5" opacity=".24" filter="url(#glow)"/>')
+        parts.append(f'<path d="{d}" fill="none" stroke="{color}" '
+                     'stroke-width=".9" opacity=".8"/>')
+        visible_paths.append((projected, color))
+    for _ in range(symbols):
+        if not visible_paths:
+            break
+        path, color = rng.choice(visible_paths)
+        x, y = rng.choice(path)
+        if not (-22 <= x <= width + 22 and -22 <= y <= height + 22):
+            continue
+        token = escape(rng.choice(GLYPHS))
         size = rng.uniform(9, 22)
-        chunks.append(f'<text x="{x:.2f}" y="{y:.2f}" transform="rotate({angle:.1f} {x:.2f} {y:.2f})" '
-                      f'fill="{color}" opacity="{rng.uniform(.48,.96):.2f}" '
-                      f'font-family="monospace" font-size="{size:.1f}">{char}</text>')
-    # Noncentral spiral star clusters: distributed variation, not a central orb.
-    for _ in range(4):
-        cx, cy = rng.uniform(.05*width,.95*width), rng.uniform(.06*height,.94*height)
-        radius = rng.uniform(15,45)
-        for i in range(44):
-            t = i*0.37
-            rr = radius*(i/44)
-            x, y = cx+rr*cos(t), cy+rr*.62*sin(t)
-            chunks.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{rng.uniform(.3,1.2):.1f}" fill="{rng.choice(PALETTE)}" opacity=".78"/>')
-    chunks.append("</svg>")
-    return "\n".join(chunks)
+        parts.append(f'<text x="{x:.2f}" y="{y:.2f}" fill="{color}" '
+                     f'opacity="{rng.uniform(.4, .98):.2f}" font-size="{size:.1f}" '
+                     f'font-family="system-ui,sans-serif">{token}</text>')
+    parts.append("</svg>")
+    return "\n".join(parts)
+
 
 def fingerprint(svg: str) -> str:
     return sha256(svg.encode("utf-8")).hexdigest()
