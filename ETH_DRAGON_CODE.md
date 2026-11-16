@@ -13,8 +13,8 @@ This is an executable **authored source language**, not an image prompt and not 
 | DOWN | \`\/\` | Not a legacy pair | Divergence |
 | UP | \`/\` | Not a legacy pair | Convergence |
 | GUILLEMETS | \`»«\` | \`«»\` | Reflection |
-| QUESTION | \`⸮\` (U+2E2E) | \`?\` and \`¿\` | Mirror horizontally; LEFT |
-| EXCLAMATION | \`⹡\` (U+2E61) | \`!\` and \`¡\` | Mirrored asymmetric inverted-wiggly vector; LEFT |
+| QUESTION | \`DRAGON_Q_LEFT\` (U+2E2E) | \`?\` and \`¿\` | Mirror horizontally; LEFT |
+| EXCLAMATION | \`DRAGON_BANG_LEFT\` (U+2E61) | \`!\` and \`¡\` | Mirrored asymmetric inverted-wiggly vector; LEFT |
 
 **Critical:** DOWN is a backslash followed by a forward slash. UP is a forward slash followed by a backslash. See the exact bytes in the machine-readable source and tests; Markdown renderers can obscure their escapes.
 
@@ -50,14 +50,18 @@ The old sample images, repository commits and program syntax remain in history. 
 The earlier inverted punctuation `¿ ¡` was **not** a directional setup. ETH Dragon now defines the source declarations:
 
 ```text
-QUESTION )( ⸮
+QUESTION )( DRAGON_Q_LEFT
 QUESTION_SETUP )( MIRROR_HORIZONTAL
 QUESTION_FACING )( LEFT
-EXCLAMATION )( ⹡
+EXCLAMATION )( DRAGON_BANG_LEFT
 EXCLAMATION_SETUP )( MIRROR_HORIZONTAL
 EXCLAMATION_FACING )( LEFT
 ```
 
-The parser rejects the prior punctuation forms in authored source. `⸮` is Unicode U+2E2E REVERSED QUESTION MARK; `⹡` is U+2E61 INVERTED WIGGLY EXCLAMATION MARK in Unicode 18.0. The latter would still appear without clear horizontal direction if shown as a straight exclamation, so the mobile renderer draws **asymmetric curved punctuation under an explicit horizontal mirror transform** without relying on platform font support. Both reversed vector samples appear above the field in the preview. Mobile tests check their painted pixels and orientation tags.
+The parser rejects the prior punctuation forms in authored source. Unicode reversed punctuation (code points U+2E2E and U+2E61) rendered as boxed missing-glyph placeholders on iPhone, so the active authored language uses the font-independent `DRAGON_Q_LEFT` and `DRAGON_BANG_LEFT` operators instead. The latter would still appear without clear horizontal direction if shown as a straight exclamation, so the mobile renderer draws **asymmetric curved punctuation under an explicit horizontal mirror transform** without relying on platform font support. Both reversed vector samples appear above the field in the preview. Mobile tests check their painted pixels and orientation tags.
 
 Changing the glyph orientation requires changing the source `_SETUP` semantics and vector rendering together. Historical assets remain unmodified.
+
+### Unframed display rule
+
+The source carries named commands because the two rare Unicode characters rendered as a boxed question mark in the owner's screenshot. The renderer paints free-standing left-facing strokes directly onto a transparent canvas, with **no enclosing rectangle, border, glyph fallback square, card, or filled background**. Those commands compile to native vector operations; their names are not captions drawn into the generated field.
