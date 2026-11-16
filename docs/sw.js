@@ -1,7 +1,7 @@
 'use strict';
 const PREFIX = 'binaiui-' + encodeURIComponent(self.registration.scope) + '-';
-const CACHE = PREFIX + '20261116hyperbolicinversev1';
-const ASSETS = ['./','./index.html','./styles.css','./genesis-studio.css','./app.js','./genesis-studio.js','./genesisfield.js','./genesis-codex.html','./genesis-codex-runtime.js','./genesis-codex-page.js','./genesis.codex','./genesis-reference-manifest.json','./content.json','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png','./helix.svg','./prism.svg','./seed.svg','./intersection.svg','./lattice.svg','./current.svg','./README.md','./UNIFIED-STUDIO.md','./PUBLICATION-CHECKLIST.md','./TEST-REPORT.md','./sw.js'];
+const CACHE = PREFIX + '20261116hyperbolicinversev2';
+const ASSETS = ['./','./index.html','./styles.css','./genesis-studio.css','./app.js','./genesis-studio.js','./genesisfield.js','./genesis-codex.html','./genesis-codex-runtime.js','./genesis-codex-page.js','./genesis.codex','./genesis-reference-manifest.json','./content.json','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png','./helix.svg','./helix-open.svg','./prism.svg','./seed.svg','./intersection.svg','./lattice.svg','./lattice-open.svg','./current.svg','./README.md','./UNIFIED-STUDIO.md','./PUBLICATION-CHECKLIST.md','./TEST-REPORT.md','./sw.js'];
 const CONTENT_PATH = new URL('./content.json', self.registration.scope).pathname;
 self.addEventListener('install', event => {
  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));
